@@ -46,4 +46,20 @@ class MenuControllerTest {
                 .andExpect(status().isCreated());
         verify(menuService).createMenu(any(MenuCreateRequest.class));
     }
+    @Test
+    void shouldReturnBadRequestWhenMenuNameIsBlank() throws Exception{
+        String requestBody = """
+            {
+                "restaurantId": "restaurant-1",
+                "name": "",
+                "description": "Night menu for the restaurant",
+                "menuType": "NIGHT",
+                "status": "ACTIVE"
+            }
+            """;
+        mockMvc.perform(post("/menus")
+                        .contentType("application/json")
+                        .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
 }
