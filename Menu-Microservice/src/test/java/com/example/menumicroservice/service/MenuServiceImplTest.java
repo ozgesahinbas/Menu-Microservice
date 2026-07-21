@@ -12,10 +12,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.example.menumicroservice.model.Menu;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MenuServiceImplTest {
@@ -51,6 +53,46 @@ class MenuServiceImplTest {
         assertEquals(MenuStatus.ACTIVE, savedMenu.getStatus());
         assertNotNull(savedMenu.getCreatedAt());
         assertNotNull(savedMenu.getUpdatedAt());
+    }
+    @Test
+    void shouldGetAllMenusSuccessfully() {
+        Menu menu1 = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.ACTIVE)
+                .build();
+
+        Menu menu2 = Menu.builder()
+                .id("menu-2")
+                .restaurantId("restaurant-1")
+                .name("Dessert Menu")
+                .menuType(MenuType.DESSERT)
+                .status(MenuStatus.ACTIVE)
+                .build();
+
+        List<Menu> menus = List.of(menu1, menu2);
+
+        when(menuRepository.findAll()).thenReturn(menus);
+
+        List<Menu> result = menuService.getAllMenus();
+
+        assertEquals(2, result.size());
+        assertEquals("Night Menu", result.get(0).getName());
+        assertEquals("Dessert Menu", result.get(1).getName());
+
+        verify(menuRepository).findAll();
+    }
+    @Test
+    void shouldReturnEmptyListWhenNoMenusExist() {
+        when(menuRepository.findAll()).thenReturn(List.of());
+
+        List<Menu> result = menuService.getAllMenus();
+
+        assertTrue(result.isEmpty());
+
+        verify(menuRepository).findAll();
     }
 
 }
