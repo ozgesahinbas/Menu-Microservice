@@ -1,4 +1,4 @@
-package com.example.menumicroservice.model;
+package io.ozgesahinbas.restaurant.menu.model;
 
 public enum MenuStatus {
     ACTIVE,

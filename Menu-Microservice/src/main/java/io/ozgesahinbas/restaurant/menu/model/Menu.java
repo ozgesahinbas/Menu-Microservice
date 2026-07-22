@@ -1,4 +1,4 @@
-package com.example.menumicroservice.model;
+package io.ozgesahinbas.restaurant.menu.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

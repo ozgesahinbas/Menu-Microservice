@@ -1,16 +1,16 @@
-package com.example.menumicroservice.service;
+package io.ozgesahinbas.restaurant.menu.service;
 
-import com.example.menumicroservice.dto.MenuCreateRequest;
-import com.example.menumicroservice.model.MenuStatus;
-import com.example.menumicroservice.model.MenuType;
-import com.example.menumicroservice.repository.MenuRepository;
+import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
+import io.ozgesahinbas.restaurant.menu.model.MenuType;
+import io.ozgesahinbas.restaurant.menu.repository.MenuRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import com.example.menumicroservice.model.Menu;
+import io.ozgesahinbas.restaurant.menu.model.Menu;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

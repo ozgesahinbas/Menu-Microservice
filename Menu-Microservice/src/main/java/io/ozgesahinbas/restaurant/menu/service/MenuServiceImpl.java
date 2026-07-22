@@ -1,8 +1,8 @@
-package com.example.menumicroservice.service;
+package io.ozgesahinbas.restaurant.menu.service;
 
-import com.example.menumicroservice.dto.MenuCreateRequest;
-import com.example.menumicroservice.model.Menu;
-import com.example.menumicroservice.repository.MenuRepository;
+import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.model.Menu;
+import io.ozgesahinbas.restaurant.menu.repository.MenuRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

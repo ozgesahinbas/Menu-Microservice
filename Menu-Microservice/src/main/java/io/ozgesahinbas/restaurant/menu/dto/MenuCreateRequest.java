@@ -1,7 +1,7 @@
-package com.example.menumicroservice.dto;
+package io.ozgesahinbas.restaurant.menu.dto;
 
-import com.example.menumicroservice.model.MenuStatus;
-import com.example.menumicroservice.model.MenuType;
+import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
+import io.ozgesahinbas.restaurant.menu.model.MenuType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

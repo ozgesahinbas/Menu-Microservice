@@ -1,7 +1,7 @@
-package com.example.menumicroservice.controller;
+package io.ozgesahinbas.restaurant.menu.controller;
 
-import com.example.menumicroservice.dto.MenuCreateRequest;
-import com.example.menumicroservice.service.MenuServiceImpl;
+import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.service.MenuServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -61,5 +62,10 @@ class MenuControllerTest {
                         .contentType("application/json")
                         .content(requestBody))
                 .andExpect(status().isBadRequest());
+    }
+    @Test
+    void shouldGetAllMenusSuccessfully() throws Exception{
+        mockMvc.perform(get("/menus"))
+                .andExpect(status().isOk());
     }
 }

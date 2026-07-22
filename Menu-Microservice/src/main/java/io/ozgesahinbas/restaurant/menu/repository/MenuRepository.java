@@ -1,6 +1,6 @@
-package com.example.menumicroservice.repository;
+package io.ozgesahinbas.restaurant.menu.repository;
 
-import com.example.menumicroservice.model.Menu;
+import io.ozgesahinbas.restaurant.menu.model.Menu;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 
 public interface MenuRepository extends CouchbaseRepository<Menu, String> {
