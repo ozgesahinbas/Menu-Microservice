@@ -41,7 +41,7 @@ class MenuControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/menus")
+        mockMvc.perform(post("/menu")
                         .contentType("application/json")
                         .content(requestBody))
                 .andExpect(status().isCreated());
@@ -58,14 +58,14 @@ class MenuControllerTest {
                 "status": "ACTIVE"
             }
             """;
-        mockMvc.perform(post("/menus")
+        mockMvc.perform(post("/menu")
                         .contentType("application/json")
                         .content(requestBody))
                 .andExpect(status().isBadRequest());
     }
     @Test
     void shouldGetAllMenusSuccessfully() throws Exception{
-        mockMvc.perform(get("/menus"))
+        mockMvc.perform(get("/menu"))
                 .andExpect(status().isOk());
     }
 }
