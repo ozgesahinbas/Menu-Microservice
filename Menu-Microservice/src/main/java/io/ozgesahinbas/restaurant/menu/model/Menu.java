@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,6 +23,7 @@ public class Menu {
     private String description;
     private MenuType menuType;
     private MenuStatus status;
+    private List<MenuItem> items;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
