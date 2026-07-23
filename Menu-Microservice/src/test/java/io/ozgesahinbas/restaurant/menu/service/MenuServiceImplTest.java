@@ -1,6 +1,7 @@
 package io.ozgesahinbas.restaurant.menu.service;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
 import io.ozgesahinbas.restaurant.menu.model.MenuItem;
 import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
@@ -15,10 +16,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -123,4 +123,36 @@ class MenuServiceImplTest {
         assertTrue(result.isEmpty());
         verify(menuRepository).findAll();
     }
+    @Test
+    void shouldGetMenuByIdSuccessfully() {
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.ACTIVE)
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        Menu result = menuService.getMenuById("menu-1");
+
+        assertEquals("menu-1", result.getId());
+        assertEquals("Night Menu", result.getName());
+
+        verify(menuRepository).findById("menu-1");
+    }
+    void shouldThrowExceptionWhenMenuNotFoundById(){
+        when(menuRepository.findById("menu-999"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                MenuNotFoundException.class,
+                ()-> menuService.getMenuById("menu-999")
+        );
+        verify(menuRepository).findById("menu-999");
+
+    }
+
 }

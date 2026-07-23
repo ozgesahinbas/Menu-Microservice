@@ -26,4 +26,8 @@ public class MenuController {
     public List<Menu> getAllMenus() {
         return menuService.getAllMenus();
     }
+    @GetMapping("/{id}")
+    public Menu getMenuById(@PathVariable String id) {
+        return menuService.getMenuById(id);
+    }
 }
