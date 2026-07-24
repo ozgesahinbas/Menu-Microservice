@@ -1,0 +1,86 @@
+package io.ozgesahinbas.restaurant.menu.service;
+
+import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.model.Menu;
+import io.ozgesahinbas.restaurant.menu.model.MenuItem;
+import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
+import io.ozgesahinbas.restaurant.menu.model.MenuType;
+import io.ozgesahinbas.restaurant.menu.repository.MenuRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+class MenuServiceImplTest {
+
+    @Mock
+    private MenuRepository menuRepository;
+
+    @InjectMocks
+    private MenuServiceImpl menuService;
+
+    @Test
+    void shouldCreateMenuSuccessfully() {
+
+        MenuItem item = MenuItem.builder()
+                .name("Cheeseburger")
+                .description("Cheeseburger with fries")
+                .price(BigDecimal.valueOf(250))
+                .imageUrl("https://example.com/cheeseburger.jpg")
+                .build();
+
+        MenuCreateRequest request = MenuCreateRequest.builder()
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .description("Night menu for the restaurant")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.ACTIVE)
+                .items(List.of(item))
+                .build();
+
+        menuService.createMenu(request);
+
+        ArgumentCaptor<Menu> menuCaptor =
+                ArgumentCaptor.forClass(Menu.class);
+
+        verify(menuRepository).save(menuCaptor.capture());
+
+        Menu savedMenu = menuCaptor.getValue();
+
+        assertEquals("restaurant-1", savedMenu.getRestaurantId());
+        assertEquals("Night Menu", savedMenu.getName());
+        assertEquals(
+                "Night menu for the restaurant",
+                savedMenu.getDescription()
+        );
+        assertEquals(MenuType.NIGHT, savedMenu.getMenuType());
+        assertEquals(MenuStatus.ACTIVE, savedMenu.getStatus());
+
+        assertEquals(1, savedMenu.getItems().size());
+        assertEquals(
+                "Cheeseburger",
+                savedMenu.getItems().get(0).getName()
+        );
+        assertEquals(
+                BigDecimal.valueOf(250),
+                savedMenu.getItems().get(0).getPrice()
+        );
+        assertEquals(
+                "https://example.com/cheeseburger.jpg",
+                savedMenu.getItems().get(0).getImageUrl()
+        );
+
+        assertNotNull(savedMenu.getCreatedAt());
+        assertNotNull(savedMenu.getUpdatedAt());
+    }
+}
