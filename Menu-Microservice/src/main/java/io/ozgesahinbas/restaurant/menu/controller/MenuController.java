@@ -1,12 +1,16 @@
 package io.ozgesahinbas.restaurant.menu.controller;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
 import io.ozgesahinbas.restaurant.menu.service.MenuServiceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
@@ -29,5 +33,10 @@ public class MenuController {
     @GetMapping("/{id}")
     public Menu getMenuById(@PathVariable String id) {
         return menuService.getMenuById(id);
+    }
+    @PutMapping("/{id}")
+    public Menu updateMenu(@PathVariable String id,
+                           @RequestBody @Valid MenuUpdateRequest request) {
+        return menuService.updateMenu(id, request);
     }
 }
