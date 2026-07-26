@@ -13,13 +13,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class MenuControllerTest {
@@ -139,5 +136,23 @@ class MenuControllerTest {
                 .andExpect(status().isOk());
 
         verify(menuService).updateMenu(eq("menu-1"), any(MenuUpdateRequest.class));
+    }
+    @Test
+    void shouldDeleteMenuSuccessfully() throws Exception {
+        mockMvc.perform(delete("/menu/menu-1"))
+                .andExpect(status().isNoContent());
+
+        verify(menuService).deleteMenu("menu-1");
+    }
+    @Test
+    void shouldReturnNotFoundWhenDeletingNonExistingMenu() throws Exception {
+        doThrow(new MenuNotFoundException("menu-999"))
+                .when(menuService)
+                .deleteMenu("menu-999");
+
+        mockMvc.perform(delete("/menu/menu-999"))
+                .andExpect(status().isNotFound());
+
+        verify(menuService).deleteMenu("menu-999");
     }
 }

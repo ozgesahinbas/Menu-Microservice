@@ -34,4 +34,10 @@ public class MenuServiceImpl {
         request.updateEntity(menu);
         return menuRepository.save(menu);
     }
+    public void deleteMenu(String id) {
+        Menu menu = menuRepository.findById(id)
+                .orElseThrow(() -> new MenuNotFoundException(id));
+
+        menuRepository.delete(menu);
+    }
 }

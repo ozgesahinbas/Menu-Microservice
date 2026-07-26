@@ -39,4 +39,9 @@ public class MenuController {
                            @RequestBody @Valid MenuUpdateRequest request) {
         return menuService.updateMenu(id, request);
     }
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteMenu(@PathVariable String id) {
+        menuService.deleteMenu(id);
+    }
 }

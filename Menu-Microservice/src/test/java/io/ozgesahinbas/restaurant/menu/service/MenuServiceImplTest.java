@@ -1,7 +1,7 @@
 package io.ozgesahinbas.restaurant.menu.service;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
-import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
+ import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
 import io.ozgesahinbas.restaurant.menu.model.MenuItem;
@@ -14,16 +14,18 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+ import static org.mockito.ArgumentMatchers.any;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
 @ExtendWith(MockitoExtension.class)
 class MenuServiceImplTest {
@@ -156,39 +158,63 @@ class MenuServiceImplTest {
         );
         verify(menuRepository).findById("menu-999");
     }
+     @Test
+     void shouldUpdateMenuSuccessfully() {
+         Menu existingMenu = Menu.builder()
+               .id("menu-1")
+               .restaurantId("restaurant-1")
+               .name("Day Menu")
+               .description("Old description")
+               .menuType(MenuType.DAY)
+               .status(MenuStatus.ACTIVE)
+               .build();
+
+       MenuUpdateRequest request = MenuUpdateRequest.builder()
+               .name("Night Menu")
+               .description("Updated description")
+               .menuType(MenuType.NIGHT)
+               .status(MenuStatus.INACTIVE)
+               .build();
+         when(menuRepository.findById("menu-1"))
+                 .thenReturn(Optional.of(existingMenu));
+         when(menuRepository.save(any(Menu.class)))
+                 .thenAnswer(invocation
+                         -> invocation.getArgument(0));
+         Menu updatedMenu = menuService
+                 .updateMenu("menu-1", request);
+         assertEquals("Night Menu", updatedMenu.getName());
+         assertEquals("Updated description", updatedMenu.getDescription());
+         assertEquals(MenuType.NIGHT, updatedMenu.getMenuType());
+         assertEquals(MenuStatus.INACTIVE, updatedMenu.getStatus());
+         verify(menuRepository).findById("menu-1");
+         verify(menuRepository).save(existingMenu);
+     }
+
     @Test
-    void shouldUpdateMenuSuccessfully() {
-        Menu existingMenu = Menu.builder()
+    void shouldDeleteMenuSuccessfully() {
+        Menu menu = Menu.builder()
                 .id("menu-1")
                 .restaurantId("restaurant-1")
-                .name("Day Menu")
-                .description("Old description")
-                .menuType(MenuType.DAY)
-                .status(MenuStatus.ACTIVE)
-                .build();
-
-        MenuUpdateRequest request = MenuUpdateRequest.builder()
                 .name("Night Menu")
-                .description("Updated description")
-                .menuType(MenuType.NIGHT)
-                .status(MenuStatus.INACTIVE)
                 .build();
 
         when(menuRepository.findById("menu-1"))
-                .thenReturn(Optional.of(existingMenu));
+                .thenReturn(Optional.of(menu));
 
-        when(menuRepository.save(any(Menu.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        menuService.deleteMenu("menu-1");
 
+        verify(menuRepository).delete(menu);
+        }
 
-        Menu updatedMenu = menuService.updateMenu("menu-1", request);
+    @Test
+    void shouldThrowExceptionWhenMenuNotFoundForDelete() {
+        when(menuRepository.findById("menu-999"))
+                .thenReturn(Optional.empty());
 
-        assertEquals("Night Menu", updatedMenu.getName());
-        assertEquals("Updated description", updatedMenu.getDescription());
-        assertEquals(MenuType.NIGHT, updatedMenu.getMenuType());
-        assertEquals(MenuStatus.INACTIVE, updatedMenu.getStatus());
+        assertThrows(MenuNotFoundException.class,
+                () -> menuService.deleteMenu("menu-999"));
 
-        verify(menuRepository).findById("menu-1");
-        verify(menuRepository).save(existingMenu);
+        verify(menuRepository, never()).delete(any(Menu.class));
     }
+
 }
