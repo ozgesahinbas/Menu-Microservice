@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class MenuControllerTest {
@@ -155,4 +156,27 @@ class MenuControllerTest {
 
         verify(menuService).deleteMenu("menu-999");
     }
+    @Test
+    void shouldGetMenuByRestaurantIdSuccessfully() throws Exception {
+
+        List<Menu> menus = List.of(
+                Menu.builder()
+                        .id("menu-1")
+                        .restaurantId("restaurant-1")
+                        .name("Night Menu")
+                        .build()
+        );
+
+        when(menuService.getMenuByRestaurantId("restaurant-1"))
+                .thenReturn(menus);
+
+        mockMvc.perform(get("/menu/restaurants/restaurant-1/menus"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("menu-1"))
+                .andExpect(jsonPath("$[0].restaurantId").value("restaurant-1"))
+                .andExpect(jsonPath("$[0].name").value("Night Menu"));
+
+        verify(menuService).getMenuByRestaurantId("restaurant-1");
+    }
+
 }
