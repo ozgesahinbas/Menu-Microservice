@@ -1,6 +1,7 @@
 package io.ozgesahinbas.restaurant.menu.controller;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
 import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
@@ -12,11 +13,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class MenuControllerTest {
@@ -106,5 +106,53 @@ class MenuControllerTest {
                 .andExpect(status().isNotFound());
 
         verify(menuService).getMenuById("menu-999");
+    }
+    @Test
+    void shouldUpdateMenuSuccessfully() throws Exception {
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .description("Updated description")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.INACTIVE)
+                .build();
+
+        String requestBody = """
+            {
+                "name": "Night Menu",
+                "description": "Updated description",
+                "menuType": "NIGHT",
+                "status": "INACTIVE"
+            }
+            """;
+
+        when(menuService.updateMenu(eq("menu-1"), any(MenuUpdateRequest.class)))
+                .thenReturn(menu);
+
+        mockMvc.perform(put("/menu/menu-1")
+                        .contentType("application/json")
+                        .content(requestBody))
+                .andExpect(status().isOk());
+
+        verify(menuService).updateMenu(eq("menu-1"), any(MenuUpdateRequest.class));
+    }
+    @Test
+    void shouldDeleteMenuSuccessfully() throws Exception {
+        mockMvc.perform(delete("/menu/menu-1"))
+                .andExpect(status().isNoContent());
+
+        verify(menuService).deleteMenu("menu-1");
+    }
+    @Test
+    void shouldReturnNotFoundWhenDeletingNonExistingMenu() throws Exception {
+        doThrow(new MenuNotFoundException("menu-999"))
+                .when(menuService)
+                .deleteMenu("menu-999");
+
+        mockMvc.perform(delete("/menu/menu-999"))
+                .andExpect(status().isNotFound());
+
+        verify(menuService).deleteMenu("menu-999");
     }
 }
