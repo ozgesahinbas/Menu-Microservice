@@ -216,5 +216,37 @@ class MenuServiceImplTest {
 
         verify(menuRepository, never()).delete(any(Menu.class));
     }
+    @Test
+    void shouldGetMenuItemsSuccessfully() {
+        List<MenuItem> items = List.of(
+                MenuItem.builder()
+                        .name("Pizza")
+                        .description("Pepperoni Pizza")
+                        .price(BigDecimal.valueOf(250))
+                        .imageUrl("pizza.jpg")
+                        .build(),
+                MenuItem.builder()
+                        .name("Burger")
+                        .description("Cheeseburger")
+                        .price(BigDecimal.valueOf(180))
+                        .imageUrl("burger.jpg")
+                        .build()
+        );
+
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .items(items)
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        List<MenuItem> result = menuService.getMenuItems("menu-1");
+
+        assertEquals(2, result.size());
+        assertEquals("Pizza", result.get(0).getName());
+
+        verify(menuRepository).findById("menu-1");
+    }
 
 }

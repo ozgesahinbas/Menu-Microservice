@@ -4,6 +4,7 @@ import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
+import io.ozgesahinbas.restaurant.menu.model.MenuItem;
 import io.ozgesahinbas.restaurant.menu.repository.MenuRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,5 +40,11 @@ public class MenuServiceImpl {
                 .orElseThrow(() -> new MenuNotFoundException(id));
 
         menuRepository.delete(menu);
+    }
+    public List<MenuItem> getMenuItems(String menuId) {
+        Menu menu = menuRepository.findById(menuId)
+                .orElseThrow(() -> new MenuNotFoundException(menuId));
+
+        return menu.getItems();
     }
 }

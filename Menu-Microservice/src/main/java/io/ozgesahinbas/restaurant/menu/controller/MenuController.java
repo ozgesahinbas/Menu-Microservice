@@ -3,6 +3,7 @@ package io.ozgesahinbas.restaurant.menu.controller;
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
+import io.ozgesahinbas.restaurant.menu.model.MenuItem;
 import io.ozgesahinbas.restaurant.menu.service.MenuServiceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,5 +44,9 @@ public class MenuController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteMenu(@PathVariable String id) {
         menuService.deleteMenu(id);
+    }
+    @GetMapping("/{menuId}/items")
+    public List<MenuItem> getMenuItems(@PathVariable String menuId) {
+        return menuService.getMenuItems(menuId);
     }
 }
