@@ -1,12 +1,18 @@
 package io.ozgesahinbas.restaurant.menu.controller;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
+import io.ozgesahinbas.restaurant.menu.model.Menu;
+import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
+import io.ozgesahinbas.restaurant.menu.model.MenuType;
 import io.ozgesahinbas.restaurant.menu.service.MenuServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import java.util.List;
 
+import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -64,8 +70,41 @@ class MenuControllerTest {
                 .andExpect(status().isBadRequest());
     }
     @Test
-    void shouldGetAllMenusSuccessfully() throws Exception{
+    void shouldGetAllMenusSuccessfully() throws Exception {
+        when(menuService.getAllMenus()).thenReturn(List.of());
+
         mockMvc.perform(get("/menu"))
                 .andExpect(status().isOk());
+
+        verify(menuService).getAllMenus();
+    }
+
+    @Test
+    void shouldGetMenuByIdSuccessfully() throws Exception {
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.ACTIVE)
+                .build();
+
+        when(menuService.getMenuById("menu-1"))
+                .thenReturn(menu);
+
+        mockMvc.perform(get("/menu/menu-1"))
+                .andExpect(status().isOk());
+
+        verify(menuService).getMenuById("menu-1");
+    }
+    @Test
+    void shouldReturnNotFoundWhenMenuDoesNotExist() throws Exception {
+        when(menuService.getMenuById("menu-999"))
+                .thenThrow(new MenuNotFoundException("menu-999"));
+
+        mockMvc.perform(get("/menu/menu-999"))
+                .andExpect(status().isNotFound());
+
+        verify(menuService).getMenuById("menu-999");
     }
 }

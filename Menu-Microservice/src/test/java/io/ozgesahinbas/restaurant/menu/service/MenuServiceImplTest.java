@@ -1,6 +1,7 @@
 package io.ozgesahinbas.restaurant.menu.service;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
 import io.ozgesahinbas.restaurant.menu.model.MenuItem;
 import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
@@ -15,10 +16,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MenuServiceImplTest {
@@ -54,7 +56,6 @@ class MenuServiceImplTest {
                 ArgumentCaptor.forClass(Menu.class);
 
         verify(menuRepository).save(menuCaptor.capture());
-
         Menu savedMenu = menuCaptor.getValue();
 
         assertEquals("restaurant-1", savedMenu.getRestaurantId());
@@ -83,4 +84,75 @@ class MenuServiceImplTest {
         assertNotNull(savedMenu.getCreatedAt());
         assertNotNull(savedMenu.getUpdatedAt());
     }
+
+    @Test
+    void shouldGetAllMenusSuccessfully() {
+
+        Menu menu1 = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.ACTIVE)
+                .build();
+
+        Menu menu2 = Menu.builder()
+                .id("menu-2")
+                .restaurantId("restaurant-1")
+                .name("Dessert Menu")
+                .menuType(MenuType.DESSERT)
+                .status(MenuStatus.ACTIVE)
+                .build();
+
+        List<Menu> menus = List.of(menu1, menu2);
+        when(menuRepository.findAll()).thenReturn(menus);
+        List<Menu> result = menuService.getAllMenus();
+
+        assertEquals(2, result.size());
+        assertEquals("Night Menu", result.get(0).getName());
+        assertEquals("Dessert Menu", result.get(1).getName());
+
+        verify(menuRepository).findAll();
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoMenusExist() {
+
+        when(menuRepository.findAll()).thenReturn(List.of());
+        List<Menu> result = menuService.getAllMenus();
+        assertTrue(result.isEmpty());
+        verify(menuRepository).findAll();
+    }
+    @Test
+    void shouldGetMenuByIdSuccessfully() {
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.ACTIVE)
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        Menu result = menuService.getMenuById("menu-1");
+
+        assertEquals("menu-1", result.getId());
+        assertEquals("Night Menu", result.getName());
+
+        verify(menuRepository).findById("menu-1");
+    }
+    void shouldThrowExceptionWhenMenuNotFoundById(){
+        when(menuRepository.findById("menu-999"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                MenuNotFoundException.class,
+                ()-> menuService.getMenuById("menu-999")
+        );
+        verify(menuRepository).findById("menu-999");
+
+    }
+
 }
