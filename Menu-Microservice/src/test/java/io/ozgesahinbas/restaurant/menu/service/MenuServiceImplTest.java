@@ -216,5 +216,28 @@ class MenuServiceImplTest {
 
         verify(menuRepository, never()).delete(any(Menu.class));
     }
+    @Test
+    void shouldGetMenuByRestaurantIdSuccessfully() {
+        List<Menu> menu = List.of(
+                Menu.builder()
+                        .id("menu-1")
+                        .restaurantId("restaurant-1")
+                        .name("Night Menu")
+                        .build(),
+                Menu.builder()
+                        .id("menu-2")
+                        .restaurantId("restaurant-1")
+                        .name("Dessert Menu")
+                        .build()
+        );
+
+        when(menuRepository.findByRestaurantId("restaurant-1"))
+                .thenReturn(menu);
+
+        List<Menu> result = menuService.getMenuByRestaurantId("restaurant-1");
+
+        assertEquals(2, result.size());
+        verify(menuRepository).findByRestaurantId("restaurant-1");
+    }
 
 }

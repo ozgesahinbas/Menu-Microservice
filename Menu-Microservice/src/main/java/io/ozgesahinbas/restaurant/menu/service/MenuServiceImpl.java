@@ -37,7 +37,9 @@ public class MenuServiceImpl {
     public void deleteMenu(String id) {
         Menu menu = menuRepository.findById(id)
                 .orElseThrow(() -> new MenuNotFoundException(id));
-
         menuRepository.delete(menu);
+    }
+    public List<Menu> getMenuByRestaurantId(String restaurantId) {
+        return menuRepository.findByRestaurantId(restaurantId);
     }
 }

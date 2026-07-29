@@ -44,4 +44,8 @@ public class MenuController {
     public void deleteMenu(@PathVariable String id) {
         menuService.deleteMenu(id);
     }
+    @GetMapping("/restaurants/{restaurantId}/menus")
+    public List<Menu> getMenuByRestaurantId(@PathVariable String restaurantId) {
+        return menuService.getMenuByRestaurantId(restaurantId);
+    }
 }
