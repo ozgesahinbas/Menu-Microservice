@@ -1,16 +1,21 @@
 package io.ozgesahinbas.restaurant.menu.controller;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.dto.MenuItemCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
+import io.ozgesahinbas.restaurant.menu.model.MenuItem;
 import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
 import io.ozgesahinbas.restaurant.menu.model.MenuType;
 import io.ozgesahinbas.restaurant.menu.service.MenuServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -177,6 +182,41 @@ class MenuControllerTest {
                 .andExpect(jsonPath("$[0].name").value("Night Menu"));
 
         verify(menuService).getMenuByRestaurantId("restaurant-1");
+    }
+    @Test
+    void shouldCreateMenuItemSuccessfullyInController() throws Exception {
+
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .items(List.of(
+                        MenuItem.builder()
+                                .name("Pizza")
+                                .description("Pepperoni Pizza")
+                                .price(BigDecimal.valueOf(250))
+                                .imageUrl("pizza.jpg")
+                                .build()
+                ))
+                .build();
+
+        when(menuService.createMenuItem(eq("menu-1"), any(MenuItemCreateRequest.class)))
+                .thenReturn(menu);
+
+        String requestBody = """
+            {
+              "name": "Pizza",
+              "description": "Pepperoni Pizza",
+              "price": 250,
+              "imageUrl": "pizza.jpg"
+            }
+            """;
+
+        mockMvc.perform(post("/menu/menu-1/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].name").value("Pizza"));
+
+        verify(menuService).createMenuItem(eq("menu-1"), any(MenuItemCreateRequest.class));
     }
 
 }

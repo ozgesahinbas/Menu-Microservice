@@ -1,6 +1,7 @@
 package io.ozgesahinbas.restaurant.menu.controller;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.dto.MenuItemCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
 import io.ozgesahinbas.restaurant.menu.service.MenuServiceImpl;
@@ -47,5 +48,12 @@ public class MenuController {
     @GetMapping("/restaurants/{restaurantId}/menus")
     public List<Menu> getMenuByRestaurantId(@PathVariable String restaurantId) {
         return menuService.getMenuByRestaurantId(restaurantId);
+    }
+    @PostMapping("/{menuId}/items")
+    public Menu createMenuItem(
+            @PathVariable String menuId,
+            @Valid @RequestBody MenuItemCreateRequest request) {
+
+        return menuService.createMenuItem(menuId, request);
     }
 }
