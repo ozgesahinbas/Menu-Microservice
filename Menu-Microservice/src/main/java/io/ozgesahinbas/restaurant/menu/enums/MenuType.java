@@ -1,4 +1,4 @@
-package io.ozgesahinbas.restaurant.menu.model;
+package io.ozgesahinbas.restaurant.menu.enums;
 
 public enum MenuType {
     NIGHT,

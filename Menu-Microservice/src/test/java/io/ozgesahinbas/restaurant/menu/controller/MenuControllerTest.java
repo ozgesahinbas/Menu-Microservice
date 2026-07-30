@@ -3,10 +3,10 @@ package io.ozgesahinbas.restaurant.menu.controller;
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
-import io.ozgesahinbas.restaurant.menu.model.Menu;
-import io.ozgesahinbas.restaurant.menu.model.MenuItem;
-import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
-import io.ozgesahinbas.restaurant.menu.model.MenuType;
+import io.ozgesahinbas.restaurant.menu.entity.Menu;
+import io.ozgesahinbas.restaurant.menu.entity.MenuItem;
+import io.ozgesahinbas.restaurant.menu.enums.MenuStatus;
+import io.ozgesahinbas.restaurant.menu.enums.MenuType;
 import io.ozgesahinbas.restaurant.menu.service.MenuServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -167,13 +167,16 @@ class MenuControllerTest {
                         .name("Pizza")
                         .description("Pepperoni Pizza")
                         .price(BigDecimal.valueOf(250))
-                        .imageUrl("pizza.jpg")
+                        .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
+                        .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
                         .build(),
+
                 MenuItem.builder()
                         .name("Burger")
                         .description("Cheeseburger")
                         .price(BigDecimal.valueOf(180))
-                        .imageUrl("burger.jpg")
+                        .photoUrls(List.of("https://cdn.example.com/image-2.jpg"))
+                        .videoUrls(List.of("https://cdn.example.com/video-2.mp4"))
                         .build()
         );
 

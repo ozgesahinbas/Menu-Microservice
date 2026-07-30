@@ -3,11 +3,12 @@ package io.ozgesahinbas.restaurant.menu.service;
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
  import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
-import io.ozgesahinbas.restaurant.menu.model.Menu;
-import io.ozgesahinbas.restaurant.menu.model.MenuItem;
-import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
-import io.ozgesahinbas.restaurant.menu.model.MenuType;
+import io.ozgesahinbas.restaurant.menu.entity.Menu;
+import io.ozgesahinbas.restaurant.menu.entity.MenuItem;
+import io.ozgesahinbas.restaurant.menu.enums.MenuStatus;
+import io.ozgesahinbas.restaurant.menu.enums.MenuType;
 import io.ozgesahinbas.restaurant.menu.repository.MenuRepository;
+import io.ozgesahinbas.restaurant.menu.repository.MenuItemRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,8 +25,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
  import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
 @ExtendWith(MockitoExtension.class)
 class MenuServiceImplTest {
@@ -33,18 +32,14 @@ class MenuServiceImplTest {
     @Mock
     private MenuRepository menuRepository;
 
+    @Mock
+    private MenuItemRepository menuItemRepository;
+
     @InjectMocks
     private MenuServiceImpl menuService;
 
     @Test
     void shouldCreateMenuSuccessfully() {
-
-        MenuItem item = MenuItem.builder()
-                .name("Cheeseburger")
-                .description("Cheeseburger with fries")
-                .price(BigDecimal.valueOf(250))
-                .imageUrl("https://example.com/cheeseburger.jpg")
-                .build();
 
         MenuCreateRequest request = MenuCreateRequest.builder()
                 .restaurantId("restaurant-1")
@@ -52,7 +47,6 @@ class MenuServiceImplTest {
                 .description("Night menu for the restaurant")
                 .menuType(MenuType.NIGHT)
                 .status(MenuStatus.ACTIVE)
-                .items(List.of(item))
                 .build();
 
         menuService.createMenu(request);
@@ -61,30 +55,14 @@ class MenuServiceImplTest {
                 ArgumentCaptor.forClass(Menu.class);
 
         verify(menuRepository).save(menuCaptor.capture());
+
         Menu savedMenu = menuCaptor.getValue();
 
         assertEquals("restaurant-1", savedMenu.getRestaurantId());
         assertEquals("Night Menu", savedMenu.getName());
-        assertEquals(
-                "Night menu for the restaurant",
-                savedMenu.getDescription()
-        );
+        assertEquals("Night menu for the restaurant", savedMenu.getDescription());
         assertEquals(MenuType.NIGHT, savedMenu.getMenuType());
         assertEquals(MenuStatus.ACTIVE, savedMenu.getStatus());
-
-        assertEquals(1, savedMenu.getItems().size());
-        assertEquals(
-                "Cheeseburger",
-                savedMenu.getItems().get(0).getName()
-        );
-        assertEquals(
-                BigDecimal.valueOf(250),
-                savedMenu.getItems().get(0).getPrice()
-        );
-        assertEquals(
-                "https://example.com/cheeseburger.jpg",
-                savedMenu.getItems().get(0).getImageUrl()
-        );
 
         assertNotNull(savedMenu.getCreatedAt());
         assertNotNull(savedMenu.getUpdatedAt());
@@ -218,28 +196,35 @@ class MenuServiceImplTest {
     }
     @Test
     void shouldGetMenuItemsSuccessfully() {
+
         List<MenuItem> items = List.of(
                 MenuItem.builder()
                         .name("Pizza")
                         .description("Pepperoni Pizza")
                         .price(BigDecimal.valueOf(250))
-                        .imageUrl("pizza.jpg")
+                        .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
+                        .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
                         .build(),
+
                 MenuItem.builder()
                         .name("Burger")
                         .description("Cheeseburger")
                         .price(BigDecimal.valueOf(180))
-                        .imageUrl("burger.jpg")
+                        .photoUrls(List.of("https://cdn.example.com/image-2.jpg"))
+                        .videoUrls(List.of("https://cdn.example.com/video-2.mp4"))
                         .build()
         );
 
         Menu menu = Menu.builder()
                 .id("menu-1")
-                .items(items)
+                .restaurantId("restaurant-1")
                 .build();
 
         when(menuRepository.findById("menu-1"))
                 .thenReturn(Optional.of(menu));
+
+        when(menuItemRepository.findByMenuId("menu-1"))
+                .thenReturn(items);
 
         List<MenuItem> result = menuService.getMenuItems("menu-1");
 
@@ -247,6 +232,7 @@ class MenuServiceImplTest {
         assertEquals("Pizza", result.get(0).getName());
 
         verify(menuRepository).findById("menu-1");
+        verify(menuItemRepository).findByMenuId("menu-1");
     }
 
 }

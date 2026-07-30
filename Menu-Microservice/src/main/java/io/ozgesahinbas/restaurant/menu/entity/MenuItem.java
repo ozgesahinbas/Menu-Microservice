@@ -1,5 +1,6 @@
-package io.ozgesahinbas.restaurant.menu.model;
+package io.ozgesahinbas.restaurant.menu.entity;
 
+import io.ozgesahinbas.restaurant.menu.enums.MenuItemStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -7,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,16 +17,22 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document
-public class Menu {
+public class MenuItem {
+
     @Id
     private String id;
+    private String menuId;
     private String restaurantId;
     private String name;
     private String description;
-    private MenuType menuType;
-    private MenuStatus status;
-    private List<MenuItem> items;
+    private String category;
+    private BigDecimal price;
+    private String currency;
+    private List<String> photoUrls;
+    private List<String> videoUrls;
+    private List<String> allergens;
+    private List<String> ingredients;
+    private MenuItemStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
 }
