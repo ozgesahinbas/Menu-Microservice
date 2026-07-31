@@ -2,6 +2,7 @@ package io.ozgesahinbas.restaurant.menu.service;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
  import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
+import io.ozgesahinbas.restaurant.menu.exception.MenuItemNotFoundException;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.entity.Menu;
 import io.ozgesahinbas.restaurant.menu.entity.MenuItem;
@@ -126,6 +127,7 @@ class MenuServiceImplTest {
 
         verify(menuRepository).findById("menu-1");
     }
+    @Test
     void shouldThrowExceptionWhenMenuNotFoundById(){
         when(menuRepository.findById("menu-999"))
                 .thenReturn(Optional.empty());
@@ -233,6 +235,59 @@ class MenuServiceImplTest {
 
         verify(menuRepository).findById("menu-1");
         verify(menuItemRepository).findByMenuId("menu-1");
+    }
+    @Test
+    void shouldGetMenuItemByIdSuccessfully() {
+
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .build();
+
+        MenuItem menuItem = MenuItem.builder()
+                .id("item-1")
+                .menuId("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Pizza")
+                .description("Pepperoni Pizza")
+                .price(BigDecimal.valueOf(250))
+                .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
+                .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        when(menuItemRepository.findById("item-1"))
+                .thenReturn(Optional.of(menuItem));
+
+        MenuItem result = menuService.getMenuItemById("menu-1", "item-1");
+
+        assertEquals("Pizza", result.getName());
+
+        verify(menuRepository).findById("menu-1");
+        verify(menuItemRepository).findById("item-1");
+    }
+    @Test
+    void shouldThrowExceptionWhenMenuItemNotFoundById() {
+
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        when(menuItemRepository.findById("item-999"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                MenuItemNotFoundException.class,
+                () -> menuService.getMenuItemById("menu-1", "item-999")
+        );
+
+        verify(menuRepository).findById("menu-1");
+        verify(menuItemRepository).findById("item-999");
     }
 
 }

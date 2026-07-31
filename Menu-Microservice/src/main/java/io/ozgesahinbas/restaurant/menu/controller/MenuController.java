@@ -59,6 +59,14 @@ public class MenuController {
 
     @GetMapping("/{menuId}/items")
     public List<MenuItem> getMenuItems(@PathVariable String menuId) {
+
         return menuService.getMenuItems(menuId);
     }
+    @GetMapping("/{menuId}/items/{itemId}")
+    public MenuItem getMenuItemById(@PathVariable String menuId,
+                                    @PathVariable String itemId) {
+
+        return menuService.getMenuItemById(menuId, itemId);
+    }
+
 }

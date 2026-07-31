@@ -2,6 +2,7 @@ package io.ozgesahinbas.restaurant.menu.controller;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
+import io.ozgesahinbas.restaurant.menu.exception.MenuItemNotFoundException;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.entity.Menu;
 import io.ozgesahinbas.restaurant.menu.entity.MenuItem;
@@ -189,5 +190,38 @@ class MenuControllerTest {
                 .andExpect(jsonPath("$[1].name").value("Burger"));
 
         verify(menuService).getMenuItems("menu-1");
+    }
+    @Test
+    void shouldGetMenuItemByIdSuccessfully() throws Exception {
+
+        MenuItem menuItem = MenuItem.builder()
+                .id("item-1")
+                .menuId("menu-1")
+                .name("Pizza")
+                .description("Pepperoni Pizza")
+                .price(BigDecimal.valueOf(250))
+                .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
+                .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
+                .build();
+
+        when(menuService.getMenuItemById("menu-1", "item-1"))
+                .thenReturn(menuItem);
+
+        mockMvc.perform(get("/menu/menu-1/items/item-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Pizza"));
+
+        verify(menuService).getMenuItemById("menu-1", "item-1");
+    }
+    @Test
+    void shouldReturnNotFoundWhenMenuItemDoesNotExist() throws Exception {
+
+        when(menuService.getMenuItemById("menu-1", "item-999"))
+                .thenThrow(new MenuItemNotFoundException("item-999"));
+
+        mockMvc.perform(get("/menu/menu-1/items/item-999"))
+                .andExpect(status().isNotFound());
+
+        verify(menuService).getMenuItemById("menu-1", "item-999");
     }
 }

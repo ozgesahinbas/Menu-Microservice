@@ -5,6 +5,7 @@ import io.ozgesahinbas.restaurant.menu.dto.MenuItemCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.entity.Menu;
 import io.ozgesahinbas.restaurant.menu.entity.MenuItem;
+import io.ozgesahinbas.restaurant.menu.exception.MenuItemNotFoundException;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.repository.MenuItemRepository;
 import io.ozgesahinbas.restaurant.menu.repository.MenuRepository;
@@ -61,5 +62,17 @@ public class MenuServiceImpl {
 
         MenuItem menuItem = request.toEntity(menuId, menu.getRestaurantId());
         return menuItemRepository.save(menuItem);
+    }
+    public MenuItem getMenuItemById(String menuId, String itemId) {
+
+        menuRepository.findById(menuId)
+                .orElseThrow(() -> new MenuNotFoundException(menuId));
+
+        MenuItem menuItem = menuItemRepository.findById(itemId)
+                .orElseThrow(() -> new MenuItemNotFoundException(itemId));
+        if (!menuItem.getMenuId().equals(menuId)) {
+            throw new RuntimeException("Menu item does not belong to this menu");
+        }
+        return menuItem;
     }
 }
