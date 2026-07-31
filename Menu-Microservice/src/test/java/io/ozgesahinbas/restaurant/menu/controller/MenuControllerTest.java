@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -224,4 +225,31 @@ class MenuControllerTest {
 
         verify(menuService).getMenuItemById("menu-1", "item-999");
     }
+    @Test
+    void shouldGetMenusByRestaurantIdSuccessfully() throws Exception {
+
+        Menu menu1 = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Day Menu")
+                .build();
+
+        Menu menu2 = Menu.builder()
+                .id("menu-2")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .build();
+
+        when(menuService.getMenusByRestaurantId("restaurant-1"))
+                .thenReturn(List.of(menu1, menu2));
+
+        mockMvc.perform(get("/menu/restaurant/restaurant-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name").value("Day Menu"))
+                .andExpect(jsonPath("$[1].name").value("Night Menu"));
+
+        verify(menuService).getMenusByRestaurantId("restaurant-1");
+    }
+
 }

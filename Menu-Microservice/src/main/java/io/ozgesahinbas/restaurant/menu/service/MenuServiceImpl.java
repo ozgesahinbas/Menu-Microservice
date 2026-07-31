@@ -75,4 +75,7 @@ public class MenuServiceImpl {
         }
         return menuItem;
     }
+    public List<Menu> getMenusByRestaurantId(String restaurantId) {
+        return menuRepository.findByRestaurantId(restaurantId);
+    }
 }

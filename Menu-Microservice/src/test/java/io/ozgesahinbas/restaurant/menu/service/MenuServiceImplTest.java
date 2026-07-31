@@ -289,5 +289,31 @@ class MenuServiceImplTest {
         verify(menuRepository).findById("menu-1");
         verify(menuItemRepository).findById("item-999");
     }
+    @Test
+    void shouldGetMenusByRestaurantIdSuccessfully() {
+
+        Menu menu1 = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Day Menu")
+                .build();
+
+        Menu menu2 = Menu.builder()
+                .id("menu-2")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .build();
+
+        when(menuRepository.findByRestaurantId("restaurant-1"))
+                .thenReturn(List.of(menu1, menu2));
+
+        List<Menu> result = menuService.getMenusByRestaurantId("restaurant-1");
+
+        assertEquals(2, result.size());
+        assertEquals("Day Menu", result.get(0).getName());
+        assertEquals("Night Menu", result.get(1).getName());
+
+        verify(menuRepository).findByRestaurantId("restaurant-1");
+    }
 
 }
