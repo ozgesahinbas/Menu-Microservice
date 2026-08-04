@@ -16,14 +16,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
-import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 class MenuServiceImplTest {
@@ -38,12 +40,11 @@ class MenuServiceImplTest {
     private MenuServiceImpl menuService;
 
     @Test
-    void shouldCreateMenuSuccessfully() {
-
+    void shouldCreateMenuWithGeneratedIdAndTimestamps() {
         MenuCreateRequest request = MenuCreateRequest.builder()
                 .restaurantId("restaurant-1")
                 .name("Night Menu")
-                .description("Night menu for the restaurant")
+                .description("Served after 20:00")
                 .menuType(MenuType.NIGHT)
                 .status(MenuStatus.ACTIVE)
                 .build();
@@ -51,212 +52,134 @@ class MenuServiceImplTest {
         when(menuRepository.save(any(Menu.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Menu result = menuService.createMenu(request);
+        Menu created = menuService.createMenu(request);
 
-        ArgumentCaptor<Menu> menuCaptor =
-                ArgumentCaptor.forClass(Menu.class);
+        ArgumentCaptor<Menu> captor = ArgumentCaptor.forClass(Menu.class);
+        verify(menuRepository).save(captor.capture());
 
-        verify(menuRepository).save(menuCaptor.capture());
-
-        Menu savedMenu = menuCaptor.getValue();
-
-        assertEquals("restaurant-1", savedMenu.getRestaurantId());
-        assertEquals("Night Menu", savedMenu.getName());
-        assertEquals("Night menu for the restaurant", savedMenu.getDescription());
-        assertEquals(MenuType.NIGHT, savedMenu.getMenuType());
-        assertEquals(MenuStatus.ACTIVE, savedMenu.getStatus());
-
-        assertNotNull(savedMenu.getCreatedAt());
-        assertNotNull(savedMenu.getUpdatedAt());
-
-        assertSame(savedMenu, result);
+        Menu persisted = captor.getValue();
+        assertThat(persisted.getId()).startsWith(Menu.ID_PREFIX);
+        assertThat(persisted.getRestaurantId()).isEqualTo("restaurant-1");
+        assertThat(persisted.getName()).isEqualTo("Night Menu");
+        assertThat(persisted.getMenuType()).isEqualTo(MenuType.NIGHT);
+        assertThat(persisted.getStatus()).isEqualTo(MenuStatus.ACTIVE);
+        assertThat(persisted.getCreatedAt()).isNotNull();
+        assertThat(persisted.getUpdatedAt()).isNotNull();
+        assertThat(created).isSameAs(persisted);
     }
 
     @Test
-    void shouldGetAllMenusSuccessfully() {
-
-        Menu menu1 = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Night Menu")
-                .menuType(MenuType.NIGHT)
-                .status(MenuStatus.ACTIVE)
-                .build();
-
-        Menu menu2 = Menu.builder()
-                .id("menu-2")
-                .restaurantId("restaurant-1")
-                .name("Dessert Menu")
-                .menuType(MenuType.DESSERT)
-                .status(MenuStatus.ACTIVE)
-                .build();
-
-        List<Menu> menus = List.of(menu1, menu2);
+    void shouldReturnAllMenus() {
+        List<Menu> menus = List.of(menu("menu::1"), menu("menu::2"));
         when(menuRepository.findAll()).thenReturn(menus);
-        List<Menu> result = menuService.getAllMenus();
 
-        assertEquals(2, result.size());
-        assertEquals("Night Menu", result.get(0).getName());
-        assertEquals("Dessert Menu", result.get(1).getName());
-
-        verify(menuRepository).findAll();
+        assertThat(menuService.getAllMenus()).isEqualTo(menus);
     }
 
     @Test
-    void shouldReturnEmptyListWhenNoMenusExist() {
+    void shouldReturnMenuById() {
+        Menu menu = menu("menu::1");
+        when(menuRepository.findById("menu::1")).thenReturn(Optional.of(menu));
 
-        when(menuRepository.findAll()).thenReturn(List.of());
-        List<Menu> result = menuService.getAllMenus();
-        assertTrue(result.isEmpty());
-        verify(menuRepository).findAll();
+        assertThat(menuService.getMenuById("menu::1")).isSameAs(menu);
     }
 
     @Test
-    void shouldGetMenuByIdSuccessfully() {
-        Menu menu = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Night Menu")
-                .menuType(MenuType.NIGHT)
-                .status(MenuStatus.ACTIVE)
+    void shouldThrowWhenMenuByIdDoesNotExist() {
+        when(menuRepository.findById("menu::404")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> menuService.getMenuById("menu::404"))
+                .isInstanceOf(MenuNotFoundException.class)
+                .hasMessage("Menu not found with id: menu::404");
+    }
+
+    @Test
+    void shouldReturnMenusOfRestaurant() {
+        List<Menu> menus = List.of(menu("menu::1"));
+        when(menuRepository.findByRestaurantId("restaurant-1")).thenReturn(menus);
+
+        assertThat(menuService.getMenusByRestaurantId("restaurant-1")).isEqualTo(menus);
+    }
+
+    @Test
+    void shouldUpdateMenuFieldsAndTouchUpdatedAt() {
+        Menu menu = menu("menu::1");
+        LocalDateTime originalUpdatedAt = menu.getUpdatedAt();
+
+        MenuUpdateRequest request = MenuUpdateRequest.builder()
+                .name("Updated Menu")
+                .description("Updated description")
+                .menuType(MenuType.DESSERT)
+                .status(MenuStatus.INACTIVE)
                 .build();
 
-        when(menuRepository.findById("menu-1"))
-                .thenReturn(Optional.of(menu));
+        when(menuRepository.findById("menu::1")).thenReturn(Optional.of(menu));
+        when(menuRepository.save(menu)).thenReturn(menu);
 
-        Menu result = menuService.getMenuById("menu-1");
+        Menu updated = menuService.updateMenu("menu::1", request);
 
-        assertEquals("menu-1", result.getId());
-        assertEquals("Night Menu", result.getName());
-
-        verify(menuRepository).findById("menu-1");
+        assertThat(updated.getName()).isEqualTo("Updated Menu");
+        assertThat(updated.getDescription()).isEqualTo("Updated description");
+        assertThat(updated.getMenuType()).isEqualTo(MenuType.DESSERT);
+        assertThat(updated.getStatus()).isEqualTo(MenuStatus.INACTIVE);
+        assertThat(updated.getUpdatedAt()).isAfterOrEqualTo(originalUpdatedAt);
+        verify(menuRepository).save(menu);
     }
 
     @Test
-    void shouldThrowExceptionWhenMenuNotFoundById(){
-        when(menuRepository.findById("menu-999"))
-                .thenReturn(Optional.empty());
-
-        assertThrows(
-                MenuNotFoundException.class,
-                ()-> menuService.getMenuById("menu-999")
-        );
-        verify(menuRepository).findById("menu-999");
-    }
-
-    @Test
-    void shouldUpdateMenuSuccessfully() {
-        Menu existingMenu = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Day Menu")
-                .description("Old description")
+    void shouldThrowWhenUpdatingMissingMenu() {
+        MenuUpdateRequest request = MenuUpdateRequest.builder()
+                .name("Updated Menu")
                 .menuType(MenuType.DAY)
                 .status(MenuStatus.ACTIVE)
                 .build();
 
-        MenuUpdateRequest request = MenuUpdateRequest.builder()
-                .name("Night Menu")
-                .description("Updated description")
-                .menuType(MenuType.NIGHT)
-                .status(MenuStatus.INACTIVE)
-                .build();
+        when(menuRepository.findById("menu::404")).thenReturn(Optional.empty());
 
-        when(menuRepository.findById("menu-1"))
-                .thenReturn(Optional.of(existingMenu));
-        when(menuRepository.save(any(Menu.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        assertThatThrownBy(() -> menuService.updateMenu("menu::404", request))
+                .isInstanceOf(MenuNotFoundException.class);
 
-        Menu updatedMenu = menuService.updateMenu("menu-1", request);
-
-        assertEquals("Night Menu", updatedMenu.getName());
-        assertEquals("Updated description", updatedMenu.getDescription());
-        assertEquals(MenuType.NIGHT, updatedMenu.getMenuType());
-        assertEquals(MenuStatus.INACTIVE, updatedMenu.getStatus());
-
-        verify(menuRepository).findById("menu-1");
-        verify(menuRepository).save(existingMenu);
+        verify(menuRepository, never()).save(any(Menu.class));
     }
 
     @Test
-    void shouldGetMenusByRestaurantIdSuccessfully() {
-
-        Menu menu1 = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Day Menu")
-                .build();
-
-        Menu menu2 = Menu.builder()
-                .id("menu-2")
-                .restaurantId("restaurant-1")
-                .name("Night Menu")
-                .build();
-
-        when(menuRepository.findByRestaurantId("restaurant-1"))
-                .thenReturn(List.of(menu1, menu2));
-
-        List<Menu> result = menuService.getMenusByRestaurantId("restaurant-1");
-
-        assertEquals(2, result.size());
-        assertEquals("Day Menu", result.get(0).getName());
-        assertEquals("Night Menu", result.get(1).getName());
-
-        verify(menuRepository).findByRestaurantId("restaurant-1");
-    }
-
-    @Test
-    void shouldDeleteMenuSuccessfully() {
-        Menu menu = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Night Menu")
-                .build();
-
-        when(menuRepository.findById("menu-1"))
-                .thenReturn(Optional.of(menu));
-        when(menuItemRepository.findByMenuId("menu-1"))
-                .thenReturn(List.of());
-
-        menuService.deleteMenu("menu-1");
-
-        verify(menuRepository).delete(menu);
-    }
-
-    @Test
-    void shouldDeleteMenuItemsAlongWithTheMenu() {
-        Menu menu = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Night Menu")
-                .build();
-
+    void shouldDeleteMenuTogetherWithItsItems() {
+        Menu menu = menu("menu::1");
         List<MenuItem> items = List.of(
-                MenuItem.builder().id("item-1").menuId("menu-1").build(),
-                MenuItem.builder().id("item-2").menuId("menu-1").build()
-        );
+                MenuItem.builder().id("menu-item::1").menuId("menu::1").build());
 
-        when(menuRepository.findById("menu-1"))
-                .thenReturn(Optional.of(menu));
-        when(menuItemRepository.findByMenuId("menu-1"))
-                .thenReturn(items);
+        when(menuRepository.findById("menu::1")).thenReturn(Optional.of(menu));
+        when(menuItemRepository.findByMenuId("menu::1")).thenReturn(items);
 
-        menuService.deleteMenu("menu-1");
+        menuService.deleteMenu("menu::1");
 
         verify(menuItemRepository).deleteAll(items);
         verify(menuRepository).delete(menu);
     }
 
     @Test
-    void shouldThrowExceptionWhenMenuNotFoundForDelete() {
-        when(menuRepository.findById("menu-999"))
-                .thenReturn(Optional.empty());
+    void shouldThrowWhenDeletingMissingMenu() {
+        when(menuRepository.findById("menu::404")).thenReturn(Optional.empty());
 
-        assertThrows(MenuNotFoundException.class,
-                () -> menuService.deleteMenu("menu-999"));
+        assertThatThrownBy(() -> menuService.deleteMenu("menu::404"))
+                .isInstanceOf(MenuNotFoundException.class);
 
-        verify(menuRepository, never()).delete(any(Menu.class));
         verify(menuItemRepository, never()).deleteAll(any());
+        verify(menuRepository, never()).delete(any(Menu.class));
     }
 
+    private Menu menu(String id) {
+        LocalDateTime now = LocalDateTime.now();
+
+        return Menu.builder()
+                .id(id)
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .description("Served after 20:00")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.ACTIVE)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+    }
 }

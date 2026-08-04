@@ -1,9 +1,9 @@
 package io.ozgesahinbas.restaurant.menu.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-@ResponseStatus(HttpStatus.NOT_FOUND)
+/**
+ * The HTTP status mapping lives in {@link GlobalExceptionHandler} so that every
+ * error leaves the service with the same response body.
+ */
 public class MenuNotFoundException extends RuntimeException {
 
     public MenuNotFoundException(String id) {

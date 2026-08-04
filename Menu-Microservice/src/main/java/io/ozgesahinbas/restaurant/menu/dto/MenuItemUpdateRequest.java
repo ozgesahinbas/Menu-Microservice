@@ -43,13 +43,9 @@ public class MenuItemUpdateRequest {
     private List<String> allergens;
     private List<String> ingredients;
 
+    @NotNull(message = "Status cannot be null")
     private MenuItemStatus status;
 
-    /**
-     * Replaces every client-owned field, so anything left out of the request is
-     * reset rather than kept. The item's identity and creation time are owned by
-     * the server and stay untouched.
-     */
     public void updateEntity(MenuItem menuItem) {
         menuItem.setName(name);
         menuItem.setDescription(description);
@@ -60,7 +56,7 @@ public class MenuItemUpdateRequest {
         menuItem.setVideoUrls(Objects.requireNonNullElse(videoUrls, List.of()));
         menuItem.setAllergens(Objects.requireNonNullElse(allergens, List.of()));
         menuItem.setIngredients(Objects.requireNonNullElse(ingredients, List.of()));
-        menuItem.setStatus(Objects.requireNonNullElse(status, MenuItemStatus.ACTIVE));
+        menuItem.setStatus(status);
         menuItem.setUpdatedAt(LocalDateTime.now());
     }
 }

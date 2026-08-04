@@ -1,0 +1,8 @@
+spring:
+  # Tests never talk to a real cluster: repositories are mocked, so the
+  # Couchbase auto-configuration is switched off to keep the context light.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.couchbase.CouchbaseDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.couchbase.CouchbaseRepositoriesAutoConfiguration
