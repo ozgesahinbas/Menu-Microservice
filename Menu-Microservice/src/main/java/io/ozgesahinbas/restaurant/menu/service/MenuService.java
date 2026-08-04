@@ -7,8 +7,7 @@ import io.ozgesahinbas.restaurant.menu.entity.Menu;
 import java.util.List;
 
 /**
- * Menu operations. Lookups by id report a missing menu as not found, so callers
- * can rely on getting a menu back rather than checking for null.
+ * Menu lifecycle operations. Menu items are handled by {@link MenuItemService}.
  */
 public interface MenuService {
 
@@ -22,5 +21,8 @@ public interface MenuService {
 
     Menu updateMenu(String id, MenuUpdateRequest request);
 
+    /**
+     * Deletes the menu together with every item that belongs to it.
+     */
     void deleteMenu(String id);
 }

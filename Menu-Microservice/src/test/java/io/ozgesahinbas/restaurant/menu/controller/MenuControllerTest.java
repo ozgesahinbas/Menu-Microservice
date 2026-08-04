@@ -5,210 +5,211 @@ import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.entity.Menu;
 import io.ozgesahinbas.restaurant.menu.enums.MenuStatus;
 import io.ozgesahinbas.restaurant.menu.enums.MenuType;
+import io.ozgesahinbas.restaurant.menu.exception.GlobalExceptionHandler;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.service.MenuService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@ExtendWith(MockitoExtension.class)
 class MenuControllerTest {
 
-    private MockMvc mockMvc;
+    @Mock
     private MenuService menuService;
+
+    private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        menuService = org.mockito.Mockito.mock(MenuService.class);
-
-        MenuController menuController = new MenuController(menuService);
-
         mockMvc = MockMvcBuilders
-                .standaloneSetup(menuController)
+                .standaloneSetup(new MenuController(menuService))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
     @Test
-    void shouldCreateMenuSuccessfully() throws Exception {
-        Menu created = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Night Menu")
-                .menuType(MenuType.NIGHT)
-                .status(MenuStatus.ACTIVE)
-                .build();
-
-        when(menuService.createMenu(any(MenuCreateRequest.class)))
-                .thenReturn(created);
-
-        String requestBody = """
-                {
-                    "restaurantId": "restaurant-1",
-                    "name": "Night Menu",
-                    "description": "Night menu for the restaurant",
-                    "menuType": "NIGHT",
-                    "status": "ACTIVE"
-                }
-                """;
+    void shouldCreateMenu() throws Exception {
+        when(menuService.createMenu(any(MenuCreateRequest.class))).thenReturn(menu());
 
         mockMvc.perform(post("/menus")
-                        .contentType("application/json")
-                        .content(requestBody))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "restaurantId": "restaurant-1",
+                                  "name": "Night Menu",
+                                  "description": "Served after 20:00",
+                                  "menuType": "NIGHT",
+                                  "status": "ACTIVE"
+                                }
+                                """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value("menu-1"))
-                .andExpect(jsonPath("$.name").value("Night Menu"));
+                .andExpect(jsonPath("$.id").value("menu::1"))
+                .andExpect(jsonPath("$.name").value("Night Menu"))
+                .andExpect(jsonPath("$.menuType").value("NIGHT"));
 
         verify(menuService).createMenu(any(MenuCreateRequest.class));
     }
 
     @Test
-    void shouldReturnBadRequestWhenMenuNameIsBlank() throws Exception{
-        String requestBody = """
-            {
-                "restaurantId": "restaurant-1",
-                "name": "",
-                "description": "Night menu for the restaurant",
-                "menuType": "NIGHT",
-                "status": "ACTIVE"
-            }
-            """;
+    void shouldReportEveryValidationErrorOfAnInvalidMenu() throws Exception {
         mockMvc.perform(post("/menus")
-                        .contentType("application/json")
-                        .content(requestBody))
-                .andExpect(status().isBadRequest());
-
-        verify(menuService, never()).createMenu(any(MenuCreateRequest.class));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Request validation failed"))
+                .andExpect(jsonPath("$.validationErrors.name").value("Menu name cannot be blank"))
+                .andExpect(jsonPath("$.validationErrors.restaurantId")
+                        .value("Restaurant id cannot be blank"))
+                .andExpect(jsonPath("$.validationErrors.menuType")
+                        .value("Menu type cannot be null"));
     }
 
     @Test
-    void shouldGetAllMenusSuccessfully() throws Exception {
-        when(menuService.getAllMenus()).thenReturn(List.of());
+    void shouldRejectUnknownMenuType() throws Exception {
+        mockMvc.perform(post("/menus")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "restaurantId": "restaurant-1",
+                                  "name": "Night Menu",
+                                  "menuType": "BRUNCH"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Malformed request body"));
+    }
+
+    @Test
+    void shouldReturnAllMenus() throws Exception {
+        when(menuService.getAllMenus()).thenReturn(List.of(menu()));
 
         mockMvc.perform(get("/menus"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].id").value("menu::1"));
 
         verify(menuService).getAllMenus();
     }
 
     @Test
-    void shouldGetMenuByIdSuccessfully() throws Exception {
-        Menu menu = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Night Menu")
-                .menuType(MenuType.NIGHT)
-                .status(MenuStatus.ACTIVE)
-                .build();
+    void shouldReturnMenuById() throws Exception {
+        when(menuService.getMenuById("menu::1")).thenReturn(menu());
 
-        when(menuService.getMenuById("menu-1"))
-                .thenReturn(menu);
-
-        mockMvc.perform(get("/menus/menu-1"))
-                .andExpect(status().isOk());
-
-        verify(menuService).getMenuById("menu-1");
+        mockMvc.perform(get("/menus/menu::1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Night Menu"));
     }
 
     @Test
-    void shouldReturnNotFoundWhenMenuDoesNotExist() throws Exception {
-        when(menuService.getMenuById("menu-999"))
-                .thenThrow(new MenuNotFoundException("menu-999"));
+    void shouldReturnNotFoundForMissingMenu() throws Exception {
+        when(menuService.getMenuById("menu::404"))
+                .thenThrow(new MenuNotFoundException("menu::404"));
 
-        mockMvc.perform(get("/menus/menu-999"))
+        mockMvc.perform(get("/menus/menu::404"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Menu not found with id: menu::404"))
+                .andExpect(jsonPath("$.path").value("/menus/menu::404"));
+    }
+
+    @Test
+    void shouldUpdateMenu() throws Exception {
+        Menu updated = menu();
+        updated.setName("Updated Menu");
+        updated.setStatus(MenuStatus.INACTIVE);
+
+        when(menuService.updateMenu(eq("menu::1"), any(MenuUpdateRequest.class)))
+                .thenReturn(updated);
+
+        mockMvc.perform(put("/menus/menu::1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Updated Menu",
+                                  "description": "Updated description",
+                                  "menuType": "NIGHT",
+                                  "status": "INACTIVE"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated Menu"))
+                .andExpect(jsonPath("$.status").value("INACTIVE"));
+
+        verify(menuService).updateMenu(eq("menu::1"), any(MenuUpdateRequest.class));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingMissingMenu() throws Exception {
+        when(menuService.updateMenu(eq("menu::404"), any(MenuUpdateRequest.class)))
+                .thenThrow(new MenuNotFoundException("menu::404"));
+
+        mockMvc.perform(put("/menus/menu::404")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Updated Menu",
+                                  "menuType": "NIGHT",
+                                  "status": "ACTIVE"
+                                }
+                                """))
                 .andExpect(status().isNotFound());
-
-        verify(menuService).getMenuById("menu-999");
     }
 
     @Test
-    void shouldUpdateMenuSuccessfully() throws Exception {
-        Menu menu = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Night Menu")
-                .description("Updated description")
-                .menuType(MenuType.NIGHT)
-                .status(MenuStatus.INACTIVE)
-                .build();
-
-        String requestBody = """
-            {
-                "name": "Night Menu",
-                "description": "Updated description",
-                "menuType": "NIGHT",
-                "status": "INACTIVE"
-            }
-            """;
-
-        when(menuService.updateMenu(eq("menu-1"), any(MenuUpdateRequest.class)))
-                .thenReturn(menu);
-
-        mockMvc.perform(put("/menus/menu-1")
-                        .contentType("application/json")
-                        .content(requestBody))
-                .andExpect(status().isOk());
-
-        verify(menuService).updateMenu(eq("menu-1"), any(MenuUpdateRequest.class));
-    }
-
-    @Test
-    void shouldDeleteMenuSuccessfully() throws Exception {
-        mockMvc.perform(delete("/menus/menu-1"))
+    void shouldDeleteMenu() throws Exception {
+        mockMvc.perform(delete("/menus/menu::1"))
                 .andExpect(status().isNoContent());
 
-        verify(menuService).deleteMenu("menu-1");
+        verify(menuService).deleteMenu("menu::1");
     }
 
     @Test
-    void shouldReturnNotFoundWhenDeletingNonExistingMenu() throws Exception {
-        doThrow(new MenuNotFoundException("menu-999"))
-                .when(menuService)
-                .deleteMenu("menu-999");
+    void shouldReturnNotFoundWhenDeletingMissingMenu() throws Exception {
+        doThrow(new MenuNotFoundException("menu::404"))
+                .when(menuService).deleteMenu("menu::404");
 
-        mockMvc.perform(delete("/menus/menu-999"))
+        mockMvc.perform(delete("/menus/menu::404"))
                 .andExpect(status().isNotFound());
-
-        verify(menuService).deleteMenu("menu-999");
     }
 
-    @Test
-    void shouldGetMenusByRestaurantIdSuccessfully() throws Exception {
+    private Menu menu() {
+        LocalDateTime now = LocalDateTime.now();
 
-        Menu menu1 = Menu.builder()
-                .id("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Day Menu")
-                .build();
-
-        Menu menu2 = Menu.builder()
-                .id("menu-2")
+        return Menu.builder()
+                .id("menu::1")
                 .restaurantId("restaurant-1")
                 .name("Night Menu")
+                .description("Served after 20:00")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.ACTIVE)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
-
-        when(menuService.getMenusByRestaurantId("restaurant-1"))
-                .thenReturn(List.of(menu1, menu2));
-
-        mockMvc.perform(get("/menus").param("restaurantId", "restaurant-1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].id").value("menu-1"))
-                .andExpect(jsonPath("$[0].restaurantId").value("restaurant-1"))
-                .andExpect(jsonPath("$[0].name").value("Day Menu"))
-                .andExpect(jsonPath("$[1].name").value("Night Menu"));
-
-        verify(menuService).getMenusByRestaurantId("restaurant-1");
-        verify(menuService, never()).getAllMenus();
     }
-
 }

@@ -20,7 +20,7 @@ import java.util.UUID;
 @Document
 public class MenuItem {
 
-    /** Keeps item documents distinguishable from menus in the same bucket. */
+    /** @see Menu#ID_PREFIX */
     public static final String ID_PREFIX = "menu-item::";
 
     @Id

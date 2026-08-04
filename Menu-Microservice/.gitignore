@@ -32,3 +32,11 @@ build/
 
 ### VS Code ###
 .vscode/
+bin/
+
+### macOS ###
+.DS_Store
+
+### Local credentials - never commit ###
+.env
+.env.local

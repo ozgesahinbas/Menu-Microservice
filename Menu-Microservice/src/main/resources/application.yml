@@ -1,0 +1,42 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: menu-microservice
+
+  ssl:
+    bundle:
+      pem:
+        couchbase-capella:
+          truststore:
+            # Capella serves a certificate signed by Couchbase's own root CA,
+            # which is not in the JDK trust store - without this the TLS
+            # handshake fails with "PKIX path building failed".
+            certificate: classpath:couchbase-capella-root.pem
+
+  couchbase:
+    # Capella is TLS-only and expects the couchbases:// scheme. Spring Boot
+    # pre-builds the ClusterEnvironment, so the scheme alone is not enough -
+    # ssl.enabled has to be turned on as well or the SDK refuses to connect.
+    # Set COUCHBASE_SSL_ENABLED=false when pointing at a plain local cluster.
+    connection-string: ${COUCHBASE_CONNECTION_STRING:couchbase://localhost}
+    username: ${COUCHBASE_USERNAME:Administrator}
+    password: ${COUCHBASE_PASSWORD:password}
+    env:
+      ssl:
+        enabled: ${COUCHBASE_SSL_ENABLED:true}
+        bundle: couchbase-capella
+      timeouts:
+        connect: 20s
+        key-value: 10s
+        query: 30s
+
+  data:
+    couchbase:
+      bucket-name: ${COUCHBASE_BUCKET:menu-service}
+      scope-name: ${COUCHBASE_SCOPE:_default}
+
+logging:
+  level:
+    io.ozgesahinbas.restaurant.menu: INFO

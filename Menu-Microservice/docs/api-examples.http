@@ -1,0 +1,152 @@
+### Menu Microservice - API examples
+### Run these top to bottom: the menu and item ids are captured from the
+### create responses and reused by the requests below them.
+
+@host = http://localhost:8082
+@restaurantId = restaurant-1
+
+### 1. Create a menu
+# @name createMenu
+POST {{host}}/menus
+Content-Type: application/json
+
+{
+  "restaurantId": "{{restaurantId}}",
+  "name": "Night Menu",
+  "description": "Served after 20:00",
+  "menuType": "NIGHT",
+  "status": "ACTIVE"
+}
+
+> {% client.global.set("menuId", response.body.id); %}
+
+### 2. Create a second menu of another type
+POST {{host}}/menus
+Content-Type: application/json
+
+{
+  "restaurantId": "{{restaurantId}}",
+  "name": "Wine Menu",
+  "description": "Selected local wines",
+  "menuType": "WINE"
+}
+
+### 3. List all menus
+GET {{host}}/menus
+
+### 4. Get menu detail
+GET {{host}}/menus/{{menuId}}
+
+### 5. List menus of a restaurant
+GET {{host}}/restaurants/{{restaurantId}}/menus
+
+### 6. Update the menu
+PUT {{host}}/menus/{{menuId}}
+Content-Type: application/json
+
+{
+  "name": "Late Night Menu",
+  "description": "Served after 22:00",
+  "menuType": "NIGHT",
+  "status": "ACTIVE"
+}
+
+### 7. Add an item with photo and video information
+# @name createItem
+POST {{host}}/menus/{{menuId}}/items
+Content-Type: application/json
+
+{
+  "name": "Margherita",
+  "description": "Tomato, mozzarella, basil",
+  "category": "Pizza",
+  "price": 250.00,
+  "currency": "TRY",
+  "photoUrls": [
+    "https://cdn.example.com/image-1.jpg",
+    "https://cdn.example.com/image-2.jpg"
+  ],
+  "videoUrls": [
+    "https://cdn.example.com/video-1.mp4"
+  ],
+  "allergens": ["gluten", "lactose"],
+  "ingredients": ["tomato", "mozzarella", "basil"]
+}
+
+> {% client.global.set("itemId", response.body.id); %}
+
+### 8. Add a beverage item
+POST {{host}}/menus/{{menuId}}/items
+Content-Type: application/json
+
+{
+  "name": "Espresso",
+  "category": "Beverage",
+  "price": 60.00,
+  "currency": "TRY"
+}
+
+### 9. List the items of the menu
+GET {{host}}/menus/{{menuId}}/items
+
+### 10. Get menu item detail
+GET {{host}}/menus/{{menuId}}/items/{{itemId}}
+
+### 11. Update the menu item
+PUT {{host}}/menus/{{menuId}}/items/{{itemId}}
+Content-Type: application/json
+
+{
+  "name": "Margherita XL",
+  "description": "30 cm, tomato, mozzarella, basil",
+  "category": "Pizza",
+  "price": 320.00,
+  "currency": "TRY",
+  "photoUrls": ["https://cdn.example.com/image-3.jpg"],
+  "videoUrls": ["https://cdn.example.com/video-2.mp4"],
+  "allergens": ["gluten", "lactose"],
+  "ingredients": ["tomato", "mozzarella", "basil", "olive oil"],
+  "status": "ACTIVE"
+}
+
+### 12. Delete the menu item
+DELETE {{host}}/menus/{{menuId}}/items/{{itemId}}
+
+### 13. Delete the menu (also deletes its remaining items)
+DELETE {{host}}/menus/{{menuId}}
+
+
+### --- Error cases -------------------------------------------------------
+
+### 404 - unknown menu
+GET {{host}}/menus/menu::does-not-exist
+
+### 404 - unknown item
+GET {{host}}/menus/{{menuId}}/items/menu-item::does-not-exist
+
+### 400 - blank name, missing restaurantId and menuType
+POST {{host}}/menus
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### 400 - price is not positive
+POST {{host}}/menus/{{menuId}}/items
+Content-Type: application/json
+
+{
+  "name": "Free Water",
+  "price": 0
+}
+
+### 400 - unknown menu type
+POST {{host}}/menus
+Content-Type: application/json
+
+{
+  "restaurantId": "{{restaurantId}}",
+  "name": "Brunch Menu",
+  "menuType": "BRUNCH"
+}

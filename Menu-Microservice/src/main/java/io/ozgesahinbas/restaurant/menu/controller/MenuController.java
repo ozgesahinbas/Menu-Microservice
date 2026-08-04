@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,13 +35,6 @@ public class MenuController {
     @GetMapping
     public List<Menu> getAllMenus() {
         return menuService.getAllMenus();
-    }
-
-    // Filtering the collection rather than nesting under /restaurants keeps this
-    // service's URLs rooted at the resource it actually owns.
-    @GetMapping(params = "restaurantId")
-    public List<Menu> getMenusByRestaurantId(@RequestParam String restaurantId) {
-        return menuService.getMenusByRestaurantId(restaurantId);
     }
 
     @GetMapping("/{id}")

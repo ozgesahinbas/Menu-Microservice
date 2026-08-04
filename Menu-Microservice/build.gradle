@@ -1,10 +1,11 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.1.0'
+    id 'jacoco'
+    id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'com.example'
+group = 'io.ozgesahinbas.restaurant'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -20,7 +21,8 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-couchbase'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -32,6 +34,61 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+// The Spring Boot bootstrap class only delegates to SpringApplication.run and
+// carries no branches worth asserting, so it is kept out of the coverage scope.
+def coverageExclusions = [
+        'io/ozgesahinbas/restaurant/menu/MenuMicroserviceApplication.class'
+]
+
 tasks.named('test') {
     useJUnitPlatform()
+    // Mockito attaches its agent at runtime; JDK 21 warns unless this is set.
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
+
+    classDirectories.setFrom(
+            files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: coverageExclusions)
+            })
+    )
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    dependsOn tasks.named('jacocoTestReport')
+
+    classDirectories.setFrom(
+            files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: coverageExclusions)
+            })
+    )
+
+    violationRules {
+        rule {
+            limit {
+                counter = 'INSTRUCTION'
+                minimum = 1.0
+            }
+            limit {
+                counter = 'BRANCH'
+                minimum = 1.0
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
 }
