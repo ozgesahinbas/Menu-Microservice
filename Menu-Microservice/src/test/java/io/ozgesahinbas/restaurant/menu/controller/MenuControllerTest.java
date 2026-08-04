@@ -3,11 +3,12 @@ package io.ozgesahinbas.restaurant.menu.controller;
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuItemCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
+import io.ozgesahinbas.restaurant.menu.entity.Menu;
+import io.ozgesahinbas.restaurant.menu.entity.MenuItem;
+import io.ozgesahinbas.restaurant.menu.enums.MenuStatus;
+import io.ozgesahinbas.restaurant.menu.enums.MenuType;
+import io.ozgesahinbas.restaurant.menu.exception.MenuItemNotFoundException;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
-import io.ozgesahinbas.restaurant.menu.model.Menu;
-import io.ozgesahinbas.restaurant.menu.model.MenuItem;
-import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
-import io.ozgesahinbas.restaurant.menu.model.MenuType;
 import io.ozgesahinbas.restaurant.menu.service.MenuServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -59,6 +61,7 @@ class MenuControllerTest {
                 .andExpect(status().isCreated());
         verify(menuService).createMenu(any(MenuCreateRequest.class));
     }
+
     @Test
     void shouldReturnBadRequestWhenMenuNameIsBlank() throws Exception{
         String requestBody = """
@@ -75,6 +78,7 @@ class MenuControllerTest {
                         .content(requestBody))
                 .andExpect(status().isBadRequest());
     }
+
     @Test
     void shouldGetAllMenusSuccessfully() throws Exception {
         when(menuService.getAllMenus()).thenReturn(List.of());
@@ -103,6 +107,7 @@ class MenuControllerTest {
 
         verify(menuService).getMenuById("menu-1");
     }
+
     @Test
     void shouldReturnNotFoundWhenMenuDoesNotExist() throws Exception {
         when(menuService.getMenuById("menu-999"))
@@ -113,6 +118,7 @@ class MenuControllerTest {
 
         verify(menuService).getMenuById("menu-999");
     }
+
     @Test
     void shouldUpdateMenuSuccessfully() throws Exception {
         Menu menu = Menu.builder()
@@ -143,6 +149,7 @@ class MenuControllerTest {
 
         verify(menuService).updateMenu(eq("menu-1"), any(MenuUpdateRequest.class));
     }
+
     @Test
     void shouldDeleteMenuSuccessfully() throws Exception {
         mockMvc.perform(delete("/menu/menu-1"))
@@ -150,6 +157,7 @@ class MenuControllerTest {
 
         verify(menuService).deleteMenu("menu-1");
     }
+
     @Test
     void shouldReturnNotFoundWhenDeletingNonExistingMenu() throws Exception {
         doThrow(new MenuNotFoundException("menu-999"))
@@ -161,62 +169,155 @@ class MenuControllerTest {
 
         verify(menuService).deleteMenu("menu-999");
     }
-    @Test
-    void shouldGetMenuByRestaurantIdSuccessfully() throws Exception {
 
-        List<Menu> menus = List.of(
-                Menu.builder()
-                        .id("menu-1")
-                        .restaurantId("restaurant-1")
-                        .name("Night Menu")
-                        .build()
-        );
-
-        when(menuService.getMenuByRestaurantId("restaurant-1"))
-                .thenReturn(menus);
-
-        mockMvc.perform(get("/menu/restaurants/restaurant-1/menus"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value("menu-1"))
-                .andExpect(jsonPath("$[0].restaurantId").value("restaurant-1"))
-                .andExpect(jsonPath("$[0].name").value("Night Menu"));
-
-        verify(menuService).getMenuByRestaurantId("restaurant-1");
-    }
     @Test
     void shouldCreateMenuItemSuccessfullyInController() throws Exception {
 
-        Menu menu = Menu.builder()
-                .id("menu-1")
-                .items(List.of(
-                        MenuItem.builder()
-                                .name("Pizza")
-                                .description("Pepperoni Pizza")
-                                .price(BigDecimal.valueOf(250))
-                                .imageUrl("pizza.jpg")
-                                .build()
-                ))
+        MenuItem menuItem = MenuItem.builder()
+                .id("item-1")
+                .menuId("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Pizza")
+                .description("Pepperoni Pizza")
+                .price(BigDecimal.valueOf(250))
                 .build();
 
         when(menuService.createMenuItem(eq("menu-1"), any(MenuItemCreateRequest.class)))
-                .thenReturn(menu);
+                .thenReturn(menuItem);
 
         String requestBody = """
             {
               "name": "Pizza",
               "description": "Pepperoni Pizza",
-              "price": 250,
-              "imageUrl": "pizza.jpg"
+              "price": 250
             }
             """;
 
         mockMvc.perform(post("/menu/menu-1/items")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items[0].name").value("Pizza"));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("item-1"))
+                .andExpect(jsonPath("$.menuId").value("menu-1"))
+                .andExpect(jsonPath("$.name").value("Pizza"));
 
         verify(menuService).createMenuItem(eq("menu-1"), any(MenuItemCreateRequest.class));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenMenuItemNameIsBlank() throws Exception {
+
+        String requestBody = """
+            {
+              "name": "",
+              "description": "Pepperoni Pizza",
+              "price": 250
+            }
+            """;
+
+        mockMvc.perform(post("/menu/menu-1/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest());
+
+        verify(menuService, never())
+                .createMenuItem(any(), any(MenuItemCreateRequest.class));
+    }
+
+    @Test
+    void shouldGetMenuItemsSuccessfully() throws Exception {
+
+        List<MenuItem> items = List.of(
+                MenuItem.builder()
+                        .name("Pizza")
+                        .description("Pepperoni Pizza")
+                        .price(BigDecimal.valueOf(250))
+                        .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
+                        .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
+                        .build(),
+
+                MenuItem.builder()
+                        .name("Burger")
+                        .description("Cheeseburger")
+                        .price(BigDecimal.valueOf(180))
+                        .photoUrls(List.of("https://cdn.example.com/image-2.jpg"))
+                        .videoUrls(List.of("https://cdn.example.com/video-2.mp4"))
+                        .build()
+        );
+
+        when(menuService.getMenuItems("menu-1"))
+                .thenReturn(items);
+
+        mockMvc.perform(get("/menu/menu-1/items"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Pizza"))
+                .andExpect(jsonPath("$[1].name").value("Burger"));
+
+        verify(menuService).getMenuItems("menu-1");
+    }
+
+    @Test
+    void shouldGetMenuItemByIdSuccessfully() throws Exception {
+
+        MenuItem menuItem = MenuItem.builder()
+                .id("item-1")
+                .menuId("menu-1")
+                .name("Pizza")
+                .description("Pepperoni Pizza")
+                .price(BigDecimal.valueOf(250))
+                .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
+                .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
+                .build();
+
+        when(menuService.getMenuItemById("menu-1", "item-1"))
+                .thenReturn(menuItem);
+
+        mockMvc.perform(get("/menu/menu-1/items/item-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Pizza"));
+
+        verify(menuService).getMenuItemById("menu-1", "item-1");
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenMenuItemDoesNotExist() throws Exception {
+
+        when(menuService.getMenuItemById("menu-1", "item-999"))
+                .thenThrow(new MenuItemNotFoundException("item-999"));
+
+        mockMvc.perform(get("/menu/menu-1/items/item-999"))
+                .andExpect(status().isNotFound());
+
+        verify(menuService).getMenuItemById("menu-1", "item-999");
+    }
+
+    @Test
+    void shouldGetMenusByRestaurantIdSuccessfully() throws Exception {
+
+        Menu menu1 = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Day Menu")
+                .build();
+
+        Menu menu2 = Menu.builder()
+                .id("menu-2")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .build();
+
+        when(menuService.getMenusByRestaurantId("restaurant-1"))
+                .thenReturn(List.of(menu1, menu2));
+
+        mockMvc.perform(get("/menu/restaurants/restaurant-1/menus"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id").value("menu-1"))
+                .andExpect(jsonPath("$[0].restaurantId").value("restaurant-1"))
+                .andExpect(jsonPath("$[0].name").value("Day Menu"))
+                .andExpect(jsonPath("$[1].name").value("Night Menu"));
+
+        verify(menuService).getMenusByRestaurantId("restaurant-1");
     }
 
 }

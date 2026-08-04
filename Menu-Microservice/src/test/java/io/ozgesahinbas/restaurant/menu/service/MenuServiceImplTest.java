@@ -3,12 +3,15 @@ package io.ozgesahinbas.restaurant.menu.service;
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuItemCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
+import io.ozgesahinbas.restaurant.menu.exception.MenuItemNotFoundException;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
-import io.ozgesahinbas.restaurant.menu.model.Menu;
-import io.ozgesahinbas.restaurant.menu.model.MenuItem;
-import io.ozgesahinbas.restaurant.menu.model.MenuStatus;
-import io.ozgesahinbas.restaurant.menu.model.MenuType;
+import io.ozgesahinbas.restaurant.menu.entity.Menu;
+import io.ozgesahinbas.restaurant.menu.entity.MenuItem;
+import io.ozgesahinbas.restaurant.menu.enums.MenuItemStatus;
+import io.ozgesahinbas.restaurant.menu.enums.MenuStatus;
+import io.ozgesahinbas.restaurant.menu.enums.MenuType;
 import io.ozgesahinbas.restaurant.menu.repository.MenuRepository;
+import io.ozgesahinbas.restaurant.menu.repository.MenuItemRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -16,26 +19,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.http.MediaType;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
- import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.any;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 @ExtendWith(MockitoExtension.class)
 class MenuServiceImplTest {
 
     @Mock
     private MenuRepository menuRepository;
+
+    @Mock
+    private MenuItemRepository menuItemRepository;
 
     @InjectMocks
     private MenuServiceImpl menuService;
@@ -43,20 +43,12 @@ class MenuServiceImplTest {
     @Test
     void shouldCreateMenuSuccessfully() {
 
-        MenuItem item = MenuItem.builder()
-                .name("Cheeseburger")
-                .description("Cheeseburger with fries")
-                .price(BigDecimal.valueOf(250))
-                .imageUrl("https://example.com/cheeseburger.jpg")
-                .build();
-
         MenuCreateRequest request = MenuCreateRequest.builder()
                 .restaurantId("restaurant-1")
                 .name("Night Menu")
                 .description("Night menu for the restaurant")
                 .menuType(MenuType.NIGHT)
                 .status(MenuStatus.ACTIVE)
-                .items(List.of(item))
                 .build();
 
         menuService.createMenu(request);
@@ -65,30 +57,14 @@ class MenuServiceImplTest {
                 ArgumentCaptor.forClass(Menu.class);
 
         verify(menuRepository).save(menuCaptor.capture());
+
         Menu savedMenu = menuCaptor.getValue();
 
         assertEquals("restaurant-1", savedMenu.getRestaurantId());
         assertEquals("Night Menu", savedMenu.getName());
-        assertEquals(
-                "Night menu for the restaurant",
-                savedMenu.getDescription()
-        );
+        assertEquals("Night menu for the restaurant", savedMenu.getDescription());
         assertEquals(MenuType.NIGHT, savedMenu.getMenuType());
         assertEquals(MenuStatus.ACTIVE, savedMenu.getStatus());
-
-        assertEquals(1, savedMenu.getItems().size());
-        assertEquals(
-                "Cheeseburger",
-                savedMenu.getItems().get(0).getName()
-        );
-        assertEquals(
-                BigDecimal.valueOf(250),
-                savedMenu.getItems().get(0).getPrice()
-        );
-        assertEquals(
-                "https://example.com/cheeseburger.jpg",
-                savedMenu.getItems().get(0).getImageUrl()
-        );
 
         assertNotNull(savedMenu.getCreatedAt());
         assertNotNull(savedMenu.getUpdatedAt());
@@ -132,6 +108,7 @@ class MenuServiceImplTest {
         assertTrue(result.isEmpty());
         verify(menuRepository).findAll();
     }
+
     @Test
     void shouldGetMenuByIdSuccessfully() {
         Menu menu = Menu.builder()
@@ -152,6 +129,8 @@ class MenuServiceImplTest {
 
         verify(menuRepository).findById("menu-1");
     }
+
+    @Test
     void shouldThrowExceptionWhenMenuNotFoundById(){
         when(menuRepository.findById("menu-999"))
                 .thenReturn(Optional.empty());
@@ -162,6 +141,7 @@ class MenuServiceImplTest {
         );
         verify(menuRepository).findById("menu-999");
     }
+
      @Test
      void shouldUpdateMenuSuccessfully() {
          Menu existingMenu = Menu.builder()
@@ -220,55 +200,208 @@ class MenuServiceImplTest {
 
         verify(menuRepository, never()).delete(any(Menu.class));
     }
-    @Test
-    void shouldGetMenuByRestaurantIdSuccessfully() {
-        List<Menu> menu = List.of(
-                Menu.builder()
-                        .id("menu-1")
-                        .restaurantId("restaurant-1")
-                        .name("Night Menu")
-                        .build(),
-                Menu.builder()
-                        .id("menu-2")
-                        .restaurantId("restaurant-1")
-                        .name("Dessert Menu")
-                        .build()
-        );
 
-        when(menuRepository.findByRestaurantId("restaurant-1"))
-                .thenReturn(menu);
-
-        List<Menu> result = menuService.getMenuByRestaurantId("restaurant-1");
-
-        assertEquals(2, result.size());
-        verify(menuRepository).findByRestaurantId("restaurant-1");
-    }
     @Test
     void shouldCreateMenuItemSuccessfully() {
+
         Menu menu = Menu.builder()
                 .id("menu-1")
-                .items(new ArrayList<>())
+                .restaurantId("restaurant-1")
                 .build();
 
         MenuItemCreateRequest request = MenuItemCreateRequest.builder()
                 .name("Pizza")
                 .description("Pepperoni Pizza")
                 .price(BigDecimal.valueOf(250))
-                .imageUrl("pizza.jpg")
+                .category("Main")
+                .currency("TRY")
                 .build();
 
         when(menuRepository.findById("menu-1"))
                 .thenReturn(Optional.of(menu));
 
-        when(menuRepository.save(any(Menu.class)))
+        when(menuItemRepository.save(any(MenuItem.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Menu result = menuService.createMenuItem("menu-1", request);
+        MenuItem result = menuService.createMenuItem("menu-1", request);
 
-        assertEquals(1, result.getItems().size());
-        assertEquals("Pizza", result.getItems().get(0).getName());
+        assertEquals("menu-1", result.getMenuId());
+        assertEquals("restaurant-1", result.getRestaurantId());
+        assertEquals("Pizza", result.getName());
+        assertEquals(BigDecimal.valueOf(250), result.getPrice());
+        assertEquals(MenuItemStatus.ACTIVE, result.getStatus());
+        assertNotNull(result.getCreatedAt());
+        assertNotNull(result.getUpdatedAt());
 
-        verify(menuRepository).save(menu);
+        verify(menuRepository).findById("menu-1");
+        verify(menuItemRepository).save(any(MenuItem.class));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCreatingMenuItemForMissingMenu() {
+
+        MenuItemCreateRequest request = MenuItemCreateRequest.builder()
+                .name("Pizza")
+                .price(BigDecimal.valueOf(250))
+                .build();
+
+        when(menuRepository.findById("menu-999"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                MenuNotFoundException.class,
+                () -> menuService.createMenuItem("menu-999", request)
+        );
+
+        verify(menuItemRepository, never()).save(any(MenuItem.class));
+    }
+
+    @Test
+    void shouldGetMenuItemsSuccessfully() {
+
+        List<MenuItem> items = List.of(
+                MenuItem.builder()
+                        .name("Pizza")
+                        .description("Pepperoni Pizza")
+                        .price(BigDecimal.valueOf(250))
+                        .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
+                        .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
+                        .build(),
+
+                MenuItem.builder()
+                        .name("Burger")
+                        .description("Cheeseburger")
+                        .price(BigDecimal.valueOf(180))
+                        .photoUrls(List.of("https://cdn.example.com/image-2.jpg"))
+                        .videoUrls(List.of("https://cdn.example.com/video-2.mp4"))
+                        .build()
+        );
+
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        when(menuItemRepository.findByMenuId("menu-1"))
+                .thenReturn(items);
+
+        List<MenuItem> result = menuService.getMenuItems("menu-1");
+
+        assertEquals(2, result.size());
+        assertEquals("Pizza", result.get(0).getName());
+
+        verify(menuRepository).findById("menu-1");
+        verify(menuItemRepository).findByMenuId("menu-1");
+    }
+
+    @Test
+    void shouldGetMenuItemByIdSuccessfully() {
+
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .build();
+
+        MenuItem menuItem = MenuItem.builder()
+                .id("item-1")
+                .menuId("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Pizza")
+                .description("Pepperoni Pizza")
+                .price(BigDecimal.valueOf(250))
+                .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
+                .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        when(menuItemRepository.findById("item-1"))
+                .thenReturn(Optional.of(menuItem));
+
+        MenuItem result = menuService.getMenuItemById("menu-1", "item-1");
+
+        assertEquals("Pizza", result.getName());
+
+        verify(menuRepository).findById("menu-1");
+        verify(menuItemRepository).findById("item-1");
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMenuItemNotFoundById() {
+
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        when(menuItemRepository.findById("item-999"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                MenuItemNotFoundException.class,
+                () -> menuService.getMenuItemById("menu-1", "item-999")
+        );
+
+        verify(menuRepository).findById("menu-1");
+        verify(menuItemRepository).findById("item-999");
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMenuItemBelongsToAnotherMenu() {
+
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .build();
+
+        MenuItem menuItem = MenuItem.builder()
+                .id("item-1")
+                .menuId("menu-2")
+                .name("Pizza")
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        when(menuItemRepository.findById("item-1"))
+                .thenReturn(Optional.of(menuItem));
+
+        assertThrows(
+                MenuItemNotFoundException.class,
+                () -> menuService.getMenuItemById("menu-1", "item-1")
+        );
+    }
+
+    @Test
+    void shouldGetMenusByRestaurantIdSuccessfully() {
+
+        Menu menu1 = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Day Menu")
+                .build();
+
+        Menu menu2 = Menu.builder()
+                .id("menu-2")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .build();
+
+        when(menuRepository.findByRestaurantId("restaurant-1"))
+                .thenReturn(List.of(menu1, menu2));
+
+        List<Menu> result = menuService.getMenusByRestaurantId("restaurant-1");
+
+        assertEquals(2, result.size());
+        assertEquals("Day Menu", result.get(0).getName());
+        assertEquals("Night Menu", result.get(1).getName());
+
+        verify(menuRepository).findByRestaurantId("restaurant-1");
     }
 
 }
