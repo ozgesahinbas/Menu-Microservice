@@ -1,14 +1,17 @@
 package io.ozgesahinbas.restaurant.menu.service;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
+import io.ozgesahinbas.restaurant.menu.dto.MenuItemCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
+import io.ozgesahinbas.restaurant.menu.model.MenuItem;
 import io.ozgesahinbas.restaurant.menu.repository.MenuRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -37,7 +40,21 @@ public class MenuServiceImpl {
     public void deleteMenu(String id) {
         Menu menu = menuRepository.findById(id)
                 .orElseThrow(() -> new MenuNotFoundException(id));
-
         menuRepository.delete(menu);
+    }
+    public List<Menu> getMenuByRestaurantId(String restaurantId) {
+        return menuRepository.findByRestaurantId(restaurantId);
+    }
+    public Menu createMenuItem(String menuId, MenuItemCreateRequest request){
+        Menu menu = menuRepository.findById(menuId)
+                .orElseThrow(() -> new MenuNotFoundException(menuId));
+
+        if (menu.getItems() == null) {
+            menu.setItems(new ArrayList<>());
+        }
+        menu.getItems().add(request.toEntity());
+        menu.setUpdatedAt(LocalDateTime.now());
+
+        return menuRepository.save(menu);
     }
 }

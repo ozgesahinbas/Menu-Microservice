@@ -1,7 +1,8 @@
 package io.ozgesahinbas.restaurant.menu.service;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
- import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
+import io.ozgesahinbas.restaurant.menu.dto.MenuItemCreateRequest;
+import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
 import io.ozgesahinbas.restaurant.menu.model.Menu;
 import io.ozgesahinbas.restaurant.menu.model.MenuItem;
@@ -15,18 +16,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
+import org.springframework.http.MediaType;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
  import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 @ExtendWith(MockitoExtension.class)
 class MenuServiceImplTest {
 
@@ -215,6 +219,56 @@ class MenuServiceImplTest {
                 () -> menuService.deleteMenu("menu-999"));
 
         verify(menuRepository, never()).delete(any(Menu.class));
+    }
+    @Test
+    void shouldGetMenuByRestaurantIdSuccessfully() {
+        List<Menu> menu = List.of(
+                Menu.builder()
+                        .id("menu-1")
+                        .restaurantId("restaurant-1")
+                        .name("Night Menu")
+                        .build(),
+                Menu.builder()
+                        .id("menu-2")
+                        .restaurantId("restaurant-1")
+                        .name("Dessert Menu")
+                        .build()
+        );
+
+        when(menuRepository.findByRestaurantId("restaurant-1"))
+                .thenReturn(menu);
+
+        List<Menu> result = menuService.getMenuByRestaurantId("restaurant-1");
+
+        assertEquals(2, result.size());
+        verify(menuRepository).findByRestaurantId("restaurant-1");
+    }
+    @Test
+    void shouldCreateMenuItemSuccessfully() {
+        Menu menu = Menu.builder()
+                .id("menu-1")
+                .items(new ArrayList<>())
+                .build();
+
+        MenuItemCreateRequest request = MenuItemCreateRequest.builder()
+                .name("Pizza")
+                .description("Pepperoni Pizza")
+                .price(BigDecimal.valueOf(250))
+                .imageUrl("pizza.jpg")
+                .build();
+
+        when(menuRepository.findById("menu-1"))
+                .thenReturn(Optional.of(menu));
+
+        when(menuRepository.save(any(Menu.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Menu result = menuService.createMenuItem("menu-1", request);
+
+        assertEquals(1, result.getItems().size());
+        assertEquals("Pizza", result.getItems().get(0).getName());
+
+        verify(menuRepository).save(menu);
     }
 
 }
