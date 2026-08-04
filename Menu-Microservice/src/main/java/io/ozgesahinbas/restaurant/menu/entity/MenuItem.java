@@ -11,6 +11,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -18,6 +19,9 @@ import java.util.List;
 @AllArgsConstructor
 @Document
 public class MenuItem {
+
+    /** Keeps item documents distinguishable from menus in the same bucket. */
+    public static final String ID_PREFIX = "menu-item::";
 
     @Id
     private String id;
@@ -35,4 +39,8 @@ public class MenuItem {
     private MenuItemStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public static String newId() {
+        return ID_PREFIX + UUID.randomUUID();
+    }
 }

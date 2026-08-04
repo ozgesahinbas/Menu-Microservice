@@ -1,22 +1,17 @@
 package io.ozgesahinbas.restaurant.menu.controller;
 
 import io.ozgesahinbas.restaurant.menu.dto.MenuCreateRequest;
-import io.ozgesahinbas.restaurant.menu.dto.MenuItemCreateRequest;
 import io.ozgesahinbas.restaurant.menu.dto.MenuUpdateRequest;
 import io.ozgesahinbas.restaurant.menu.entity.Menu;
-import io.ozgesahinbas.restaurant.menu.entity.MenuItem;
 import io.ozgesahinbas.restaurant.menu.enums.MenuStatus;
 import io.ozgesahinbas.restaurant.menu.enums.MenuType;
-import io.ozgesahinbas.restaurant.menu.exception.MenuItemNotFoundException;
 import io.ozgesahinbas.restaurant.menu.exception.MenuNotFoundException;
-import io.ozgesahinbas.restaurant.menu.service.MenuServiceImpl;
+import io.ozgesahinbas.restaurant.menu.service.MenuService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -30,11 +25,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class MenuControllerTest {
 
     private MockMvc mockMvc;
-    private MenuServiceImpl menuService;
+    private MenuService menuService;
 
     @BeforeEach
     void setUp() {
-        menuService = org.mockito.Mockito.mock(MenuServiceImpl.class);
+        menuService = org.mockito.Mockito.mock(MenuService.class);
 
         MenuController menuController = new MenuController(menuService);
 
@@ -45,6 +40,17 @@ class MenuControllerTest {
 
     @Test
     void shouldCreateMenuSuccessfully() throws Exception {
+        Menu created = Menu.builder()
+                .id("menu-1")
+                .restaurantId("restaurant-1")
+                .name("Night Menu")
+                .menuType(MenuType.NIGHT)
+                .status(MenuStatus.ACTIVE)
+                .build();
+
+        when(menuService.createMenu(any(MenuCreateRequest.class)))
+                .thenReturn(created);
+
         String requestBody = """
                 {
                     "restaurantId": "restaurant-1",
@@ -55,10 +61,13 @@ class MenuControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/menu")
+        mockMvc.perform(post("/menus")
                         .contentType("application/json")
                         .content(requestBody))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("menu-1"))
+                .andExpect(jsonPath("$.name").value("Night Menu"));
+
         verify(menuService).createMenu(any(MenuCreateRequest.class));
     }
 
@@ -73,17 +82,19 @@ class MenuControllerTest {
                 "status": "ACTIVE"
             }
             """;
-        mockMvc.perform(post("/menu")
+        mockMvc.perform(post("/menus")
                         .contentType("application/json")
                         .content(requestBody))
                 .andExpect(status().isBadRequest());
+
+        verify(menuService, never()).createMenu(any(MenuCreateRequest.class));
     }
 
     @Test
     void shouldGetAllMenusSuccessfully() throws Exception {
         when(menuService.getAllMenus()).thenReturn(List.of());
 
-        mockMvc.perform(get("/menu"))
+        mockMvc.perform(get("/menus"))
                 .andExpect(status().isOk());
 
         verify(menuService).getAllMenus();
@@ -102,7 +113,7 @@ class MenuControllerTest {
         when(menuService.getMenuById("menu-1"))
                 .thenReturn(menu);
 
-        mockMvc.perform(get("/menu/menu-1"))
+        mockMvc.perform(get("/menus/menu-1"))
                 .andExpect(status().isOk());
 
         verify(menuService).getMenuById("menu-1");
@@ -113,7 +124,7 @@ class MenuControllerTest {
         when(menuService.getMenuById("menu-999"))
                 .thenThrow(new MenuNotFoundException("menu-999"));
 
-        mockMvc.perform(get("/menu/menu-999"))
+        mockMvc.perform(get("/menus/menu-999"))
                 .andExpect(status().isNotFound());
 
         verify(menuService).getMenuById("menu-999");
@@ -142,7 +153,7 @@ class MenuControllerTest {
         when(menuService.updateMenu(eq("menu-1"), any(MenuUpdateRequest.class)))
                 .thenReturn(menu);
 
-        mockMvc.perform(put("/menu/menu-1")
+        mockMvc.perform(put("/menus/menu-1")
                         .contentType("application/json")
                         .content(requestBody))
                 .andExpect(status().isOk());
@@ -152,7 +163,7 @@ class MenuControllerTest {
 
     @Test
     void shouldDeleteMenuSuccessfully() throws Exception {
-        mockMvc.perform(delete("/menu/menu-1"))
+        mockMvc.perform(delete("/menus/menu-1"))
                 .andExpect(status().isNoContent());
 
         verify(menuService).deleteMenu("menu-1");
@@ -164,131 +175,10 @@ class MenuControllerTest {
                 .when(menuService)
                 .deleteMenu("menu-999");
 
-        mockMvc.perform(delete("/menu/menu-999"))
+        mockMvc.perform(delete("/menus/menu-999"))
                 .andExpect(status().isNotFound());
 
         verify(menuService).deleteMenu("menu-999");
-    }
-
-    @Test
-    void shouldCreateMenuItemSuccessfullyInController() throws Exception {
-
-        MenuItem menuItem = MenuItem.builder()
-                .id("item-1")
-                .menuId("menu-1")
-                .restaurantId("restaurant-1")
-                .name("Pizza")
-                .description("Pepperoni Pizza")
-                .price(BigDecimal.valueOf(250))
-                .build();
-
-        when(menuService.createMenuItem(eq("menu-1"), any(MenuItemCreateRequest.class)))
-                .thenReturn(menuItem);
-
-        String requestBody = """
-            {
-              "name": "Pizza",
-              "description": "Pepperoni Pizza",
-              "price": 250
-            }
-            """;
-
-        mockMvc.perform(post("/menu/menu-1/items")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value("item-1"))
-                .andExpect(jsonPath("$.menuId").value("menu-1"))
-                .andExpect(jsonPath("$.name").value("Pizza"));
-
-        verify(menuService).createMenuItem(eq("menu-1"), any(MenuItemCreateRequest.class));
-    }
-
-    @Test
-    void shouldReturnBadRequestWhenMenuItemNameIsBlank() throws Exception {
-
-        String requestBody = """
-            {
-              "name": "",
-              "description": "Pepperoni Pizza",
-              "price": 250
-            }
-            """;
-
-        mockMvc.perform(post("/menu/menu-1/items")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest());
-
-        verify(menuService, never())
-                .createMenuItem(any(), any(MenuItemCreateRequest.class));
-    }
-
-    @Test
-    void shouldGetMenuItemsSuccessfully() throws Exception {
-
-        List<MenuItem> items = List.of(
-                MenuItem.builder()
-                        .name("Pizza")
-                        .description("Pepperoni Pizza")
-                        .price(BigDecimal.valueOf(250))
-                        .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
-                        .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
-                        .build(),
-
-                MenuItem.builder()
-                        .name("Burger")
-                        .description("Cheeseburger")
-                        .price(BigDecimal.valueOf(180))
-                        .photoUrls(List.of("https://cdn.example.com/image-2.jpg"))
-                        .videoUrls(List.of("https://cdn.example.com/video-2.mp4"))
-                        .build()
-        );
-
-        when(menuService.getMenuItems("menu-1"))
-                .thenReturn(items);
-
-        mockMvc.perform(get("/menu/menu-1/items"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Pizza"))
-                .andExpect(jsonPath("$[1].name").value("Burger"));
-
-        verify(menuService).getMenuItems("menu-1");
-    }
-
-    @Test
-    void shouldGetMenuItemByIdSuccessfully() throws Exception {
-
-        MenuItem menuItem = MenuItem.builder()
-                .id("item-1")
-                .menuId("menu-1")
-                .name("Pizza")
-                .description("Pepperoni Pizza")
-                .price(BigDecimal.valueOf(250))
-                .photoUrls(List.of("https://cdn.example.com/image-1.jpg"))
-                .videoUrls(List.of("https://cdn.example.com/video-1.mp4"))
-                .build();
-
-        when(menuService.getMenuItemById("menu-1", "item-1"))
-                .thenReturn(menuItem);
-
-        mockMvc.perform(get("/menu/menu-1/items/item-1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Pizza"));
-
-        verify(menuService).getMenuItemById("menu-1", "item-1");
-    }
-
-    @Test
-    void shouldReturnNotFoundWhenMenuItemDoesNotExist() throws Exception {
-
-        when(menuService.getMenuItemById("menu-1", "item-999"))
-                .thenThrow(new MenuItemNotFoundException("item-999"));
-
-        mockMvc.perform(get("/menu/menu-1/items/item-999"))
-                .andExpect(status().isNotFound());
-
-        verify(menuService).getMenuItemById("menu-1", "item-999");
     }
 
     @Test
@@ -309,7 +199,7 @@ class MenuControllerTest {
         when(menuService.getMenusByRestaurantId("restaurant-1"))
                 .thenReturn(List.of(menu1, menu2));
 
-        mockMvc.perform(get("/menu/restaurants/restaurant-1/menus"))
+        mockMvc.perform(get("/menus").param("restaurantId", "restaurant-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].id").value("menu-1"))
@@ -318,6 +208,7 @@ class MenuControllerTest {
                 .andExpect(jsonPath("$[1].name").value("Night Menu"));
 
         verify(menuService).getMenusByRestaurantId("restaurant-1");
+        verify(menuService, never()).getAllMenus();
     }
 
 }

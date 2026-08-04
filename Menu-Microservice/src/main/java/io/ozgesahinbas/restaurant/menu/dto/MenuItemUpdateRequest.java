@@ -20,7 +20,7 @@ import java.util.Objects;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MenuItemCreateRequest {
+public class MenuItemUpdateRequest {
 
     @NotBlank(message = "Menu item name cannot be blank")
     @Size(max = 100, message = "Menu item name cannot exceed 100 characters")
@@ -45,25 +45,22 @@ public class MenuItemCreateRequest {
 
     private MenuItemStatus status;
 
-    public MenuItem toEntity(String menuId, String restaurantId) {
-        LocalDateTime now = LocalDateTime.now();
-
-        return MenuItem.builder()
-                .id(MenuItem.newId())
-                .menuId(menuId)
-                .restaurantId(restaurantId)
-                .name(name)
-                .description(description)
-                .category(category)
-                .price(price)
-                .currency(currency)
-                .photoUrls(Objects.requireNonNullElse(photoUrls, List.of()))
-                .videoUrls(Objects.requireNonNullElse(videoUrls, List.of()))
-                .allergens(Objects.requireNonNullElse(allergens, List.of()))
-                .ingredients(Objects.requireNonNullElse(ingredients, List.of()))
-                .status(Objects.requireNonNullElse(status, MenuItemStatus.ACTIVE))
-                .createdAt(now)
-                .updatedAt(now)
-                .build();
+    /**
+     * Replaces every client-owned field, so anything left out of the request is
+     * reset rather than kept. The item's identity and creation time are owned by
+     * the server and stay untouched.
+     */
+    public void updateEntity(MenuItem menuItem) {
+        menuItem.setName(name);
+        menuItem.setDescription(description);
+        menuItem.setCategory(category);
+        menuItem.setPrice(price);
+        menuItem.setCurrency(currency);
+        menuItem.setPhotoUrls(Objects.requireNonNullElse(photoUrls, List.of()));
+        menuItem.setVideoUrls(Objects.requireNonNullElse(videoUrls, List.of()));
+        menuItem.setAllergens(Objects.requireNonNullElse(allergens, List.of()));
+        menuItem.setIngredients(Objects.requireNonNullElse(ingredients, List.of()));
+        menuItem.setStatus(Objects.requireNonNullElse(status, MenuItemStatus.ACTIVE));
+        menuItem.setUpdatedAt(LocalDateTime.now());
     }
 }
