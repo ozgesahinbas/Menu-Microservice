@@ -1,0 +1,259 @@
+{
+  "info": {
+    "_postman_id": "46ecd6f9-d90b-477a-8e6c-02a513540048",
+    "name": "Menu Service CRUD",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47050266"
+  },
+  "item": [
+    {
+      "name": "Create Menu",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"restaurantId\": \"restaurant-1\",\n  \"name\": \"Night Menu\",\n  \"description\": \"Night menu for the restaurant\",\n  \"menuType\": \"NIGHT\",\n  \"status\": \"ACTIVE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8082/menus",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Menus",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": []
+        },
+        "url": {
+          "raw": "http://localhost:8082/menus",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Menu By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8082/menus/menu::bf2fca39-e84d-447d-8f46-2efc702cfd15",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus",
+            "menu::bf2fca39-e84d-447d-8f46-2efc702cfd15"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Menu",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Night Menu\",\n  \"description\": \"Updated description\",\n  \"menuType\": \"NIGHT\",\n  \"status\": \"ACTIVE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8082/menus/menu::bf2fca39-e84d-447d-8f46-2efc702cfd15",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus",
+            "menu::bf2fca39-e84d-447d-8f46-2efc702cfd15"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Menu",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8082/menus/menu::bf2fca39-e84d-447d-8f46-2efc702cfd15",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus",
+            "menu::bf2fca39-e84d-447d-8f46-2efc702cfd15"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Menu Item",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Cheese Pizza\",\n  \"description\": \"Classic cheese pizza\",\n  \"category\": \"Pizza\",\n  \"price\": 250,\n  \"currency\": \"TRY\",\n  \"photoUrls\": [\n    \"https://cdn.example.com/pizza.jpg\"\n  ],\n  \"videoUrls\": [\n    \"https://cdn.example.com/pizza.mp4\"\n  ],\n  \"allergens\": [\n    \"Milk\",\n    \"Gluten\"\n  ],\n  \"ingredients\": [\n    \"Cheese\",\n    \"Tomato Sauce\",\n    \"Dough\"\n  ],\n  \"status\": \"ACTIVE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8082/menus/menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e/items",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus",
+            "menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e",
+            "items"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Menu Items",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8082/menus/menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e/items",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus",
+            "menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e",
+            "items"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Menu Item By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8082/menus/menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e/items/menu-item::1075c68c-cd20-4ca0-8407-2137ec9513bf",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus",
+            "menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e",
+            "items",
+            "menu-item::1075c68c-cd20-4ca0-8407-2137ec9513bf"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Menu Item",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Cheese Pizza XL\",\n  \"description\": \"Large cheese pizza\",\n  \"category\": \"Pizza\",\n  \"price\": 300,\n  \"currency\": \"TRY\",\n  \"photoUrls\": [\n    \"https://cdn.example.com/pizza-xl.jpg\"\n  ],\n  \"videoUrls\": [\n    \"https://cdn.example.com/pizza-xl.mp4\"\n  ],\n  \"allergens\": [\n    \"Milk\",\n    \"Gluten\"\n  ],\n  \"ingredients\": [\n    \"Cheese\",\n    \"Tomato Sauce\",\n    \"Dough\"\n  ],\n  \"status\": \"ACTIVE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8082/menus/menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e/items/menu-item::1075c68c-cd20-4ca0-8407-2137ec9513bf",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus",
+            "menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e",
+            "items",
+            "menu-item::1075c68c-cd20-4ca0-8407-2137ec9513bf"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Menu Item",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8082/menus/menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e/items/menu-item::1075c68c-cd20-4ca0-8407-2137ec9513bf",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8082",
+          "path": [
+            "menus",
+            "menu::333dbc2f-2091-4d18-8b0b-c6409e107c2e",
+            "items",
+            "menu-item::1075c68c-cd20-4ca0-8407-2137ec9513bf"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
