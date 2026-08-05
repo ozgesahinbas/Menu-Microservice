@@ -139,6 +139,12 @@ Base URL: `http://localhost:8082`
 | PUT | `/menus/{id}` | 200 / 404 |
 | DELETE | `/menus/{id}` | 204 / 404 |
 
+### Postman Collection
+
+A ready-to-use Postman collection containing all Menu and Menu Item CRUD requests is available under:
+
+docs/postman/menu-service-crud.postman_collection.json
+
 ### Menu items
 
 | Method | Path | Response |
